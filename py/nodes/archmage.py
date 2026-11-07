@@ -18,7 +18,8 @@ from ..dart.style_presets import STYLE_OPTIONS, resolve_style, style_directions
 from ..dart.source_tags import TAG_MODES, screen_source_tags
 
 PRESETS = {'1:1': (1024, 1024), '3:4': (768, 1024), '4:3': (1024, 768),
-           '2:3': (768, 1152), '3:2': (1152, 768), '9:16': (576, 1024), '16:9': (1024, 576)}
+           '2:3': (768, 1152), '3:2': (1152, 768), '9:16': (576, 1024), '16:9': (1024, 576),
+           '4:5': (1024, 1280), '5:4': (1280, 1024)}
 
 
 def resolve_canvas(width, height, aspect_ratio='Custom'):

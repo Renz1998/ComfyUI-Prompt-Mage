@@ -14,7 +14,7 @@ from dart_plugin.py.dart.local_assistant import load_local_clip
 class CanvasMemoryTests(unittest.TestCase):
     def test_resolution_rounds_and_preserves_portrait_shape(self):
         self.assertEqual(resolution(3.7, '2:3', 32), (1568, 2368))
-        for ratio in ('1:1', '16:9', '9:16'):
+        for ratio in ('1:1', '16:9', '9:16', '4:5', '5:4'):
             width, height = resolution(1, ratio, 16)
             self.assertEqual(width % 16, 0)
             self.assertEqual(height % 16, 0)

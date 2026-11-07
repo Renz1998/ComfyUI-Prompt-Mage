@@ -3,7 +3,8 @@ import math
 from .base import BaseNode
 
 RATIOS = {'1:1': (1, 1), '2:3': (2, 3), '3:2': (3, 2), '3:4': (3, 4),
-          '4:3': (4, 3), '9:16': (9, 16), '16:9': (16, 9), '21:9': (21, 9)}
+          '4:3': (4, 3), '9:16': (9, 16), '16:9': (16, 9), '21:9': (21, 9),
+          '4:5': (4, 5), '5:4': (5, 4)}
 
 
 def resolution(megapixels=1.0, aspect_ratio='2:3', multiple=16, custom_width=1024, custom_height=1024):

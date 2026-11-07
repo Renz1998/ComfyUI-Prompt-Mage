@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.12.1 — Portrait and landscape ratios
+
+- Adds 4:5 and 5:4 to Resolution and Archmage's standalone canvas presets. Existing choices and defaults remain unchanged.
+
 ## 1.12.0 — Main workflow and DART v3 selection
 
 - Main Archmage workflow: public default Zine circuit with DART v3 ideas, Appearance Overrides, shared Qwen and MOSS base generation. No LoRAs or extra node packs.

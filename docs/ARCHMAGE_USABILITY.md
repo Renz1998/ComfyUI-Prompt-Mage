@@ -33,3 +33,6 @@ Native MOSS boxes use centered absolute pixels, ordered **y1, x1, y2, x2**. A 15
 Text-to-JSON conversion now retains the completed prose verbatim in the summary before appearance edits, rather than allowing a shorter second-pass summary to discard detail. Layout planning receives the original constraints and directions for coherent mirror geometry and one continuous photograph. These are model instructions, not proof of correct anatomy or reflection physics.
 
 For a fair check, keep scene, seed, checkpoint, sampler, size and steps fixed, and compare Archmage's **description** with **moss_json** in the same positive encoder. Use the [paired workflows](../workflows/start-here/README.md). Preserve a prose option when layout hurts image quality.
+# Additional aspect ratios
+
+Resolution and Archmage support **4:5** portrait and **5:4** landscape. Resolution uses your megapixel budget and rounds to its selected alignment. Archmage's standalone presets use 1024 × 1280 and 1280 × 1024 respectively; connected width/height still take priority. Choose the ratio in Resolution when using the main workflow so the latent and prompt share one canvas.

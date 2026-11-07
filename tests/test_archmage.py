@@ -54,6 +54,8 @@ class ArchmageTests(unittest.TestCase):
             return plugin.NODE_CLASS_MAPPINGS['DanbooruTagsTransformerArchmageBeta']().generate(**kwargs)
 
     def test_canvas_presets_and_limits(self):
+        self.assertEqual(resolve_canvas(1024, 1024, '4:5'), (1024, 1280))
+        self.assertEqual(resolve_canvas(1024, 1024, '5:4'), (1280, 1024))
         self.assertEqual(resolve_canvas(1024, 1024, '9:16'), (576, 1024))
         self.assertEqual(resolve_canvas(768, 1152), (768, 1152))
         for dims in [(1023, 1024), (0, 1024), (8208, 1024)]:

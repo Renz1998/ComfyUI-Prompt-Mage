@@ -117,3 +117,9 @@ __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
 
 from .py.dart.deepseek_routes import register_deepseek_routes
 register_deepseek_routes()
+
+from .py.nodes.grimoire import PromptMageGrimoire
+NODE_CLASS_MAPPINGS["DanbooruTagsTransformerGrimoire"] = PromptMageGrimoire
+NODE_DISPLAY_NAME_MAPPINGS["DanbooruTagsTransformerGrimoire"] = "Prompt Mage · Grimoire (Beta)"
+from .py.dart.grimoire_routes import register_grimoire_routes
+register_grimoire_routes()

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.15.0 — Grimoire Beta
+
+- Separate persistent conversation node with system/task/pinned instructions, appearance and image references, local/OpenAI/DeepSeek backends and server-side atomic history files.
+- Adds conversational next-step/regenerate, manual/automatic summary compaction, new chapters, clear history, copy and selectable JSON/MOSS output extraction.
+- Adds a complete main-pipeline-derived Grimoire → MOSS example, without DART or Archmage. Maintenance actions block primary downstream output. Memory remains server-wide plaintext, not per-user authenticated storage.
+
 ## 1.14.0 — DeepSeek API
 
 - Adds official DeepSeek Flash and V4 Pro options to Archmage, separate masked session credentials, thinking controls, usage reporting and provider-specific errors.

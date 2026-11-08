@@ -39,6 +39,8 @@ Restart ComfyUI, refresh the browser, then search **Prompt Mage** or **Archmage*
 
 ## Pick the right tool
 
+**[Grimoire (Beta)](docs/GRIMOIRE.md)** is a separate persistent conversation node with system/task instructions, pinned facts, Appearance Overrides, image references, editable compaction summaries and selectable output extraction. [Grimoire → MOSS sample](workflows/start-here/08-grimoire-to-moss.json).
+
 **[Tag Filters](docs/TAG_FILTERS.md):** reusable Full color, No text/watermarks and Photography presets, custom bans/removals and protected tags. Share one recipe between DART Generate and Archmage.
 
 | Node | Use it for |

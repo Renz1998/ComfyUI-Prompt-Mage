@@ -4,6 +4,7 @@ Drag one JSON file into ComfyUI. **Start with 03 for the full DART v3 → Archma
 
 | I want to… | Open | What to connect / change |
 | --- | --- | --- |
+| Conversation → image sequence | [08 · Grimoire → MOSS](08-grimoire-to-moss.json) | Main sampling pipeline with Grimoire instead of DART/Archmage. Local Qwen, appearance recipe, persistent conversation and 4:5 canvas. See the on-canvas setup note. |
 | Write a scene for a character | [01 · Write a scene](01-write-a-scene.json) | Optional appearance settings → Archmage. Send **prompt** to your positive text encoder. |
 | Describe my photos | [02 · Describe uploaded images](02-describe-uploaded-images.json) | Drop photos on Upload Images. Use **Run all images from first**; batch off runs the whole connected workflow per image. |
 | **Main Archmage workflow** | [03 · DART v3 → Archmage → MOSS](03-moss-full-workflow.json) | Exact supplied Zine DART Ideas graph, minus the character LoRA. Accelerator LoRA and custom sampling/SLG remain. See the model guide for requirements. |

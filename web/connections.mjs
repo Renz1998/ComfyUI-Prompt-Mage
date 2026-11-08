@@ -6,6 +6,12 @@ const composers = (slot) => [node("ComposePromptV3", slot)];
 const generators = (slot) => [node("Generate", slot), node("GenerateAdvanced", slot)];
 
 export function connectionsFor(type, name, slotType, isOutput) {
+    if (type===prefix+'Grimoire') {
+        if (!isOutput && name==='appearance') return [node('AppearanceOverrides',0)];
+        if (!isOutput && name==='image') return [{type:'LoadImage',slot:0},node('ImageBatchUpload',0)];
+        if (!isOutput && name==='clip') return [{type:'CLIPLoader',slot:0}];
+        return isOutput ? [encode,preview] : [];
+    }
     if (!isOutput && name === 'filters' && type?.startsWith(prefix)) return [node('TagFilters',0)];
     if (type === prefix+'TagFilters') {
         if (isOutput && name === 'filters') return [node('Generate','filters'),node('ArchmageBeta','filters')];

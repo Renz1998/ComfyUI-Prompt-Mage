@@ -16,6 +16,7 @@ from ..dart.moss import canvas_size, compile_layout, layout_instruction
 from ..dart.text_output import final_text, ThinkingBudgetError
 from ..dart.style_presets import STYLE_OPTIONS, resolve_style, style_directions
 from ..dart.source_tags import TAG_MODES, screen_source_tags
+from ..dart.tag_filters import check_recipe, clean_text
 
 PRESETS = {'1:1': (1024, 1024), '3:4': (768, 1024), '4:3': (1024, 768),
            '2:3': (768, 1152), '3:2': (1152, 768), '9:16': (576, 1024), '16:9': (1024, 576),
@@ -122,6 +123,7 @@ class PromptMageArchmageBeta(BaseNode):
             'source_tags': ('STRING', {'forceInput': True, 'tooltip': 'Optional DART Generate / Decode tags. Treated as candidate scene ideas, not character identity or mandatory instructions. Appearance settings, explicit scene ideas, style and reference images take priority.'}),
             'source_tag_mode': (TAG_MODES, {'default': TAG_MODES[0], 'tooltip': 'Scene ideas removes known random hair, eye, body and named-character traits. Keep unselected appearance allows unselected traits but still removes known conflicts with chosen replacements. Both discard metadata and defer to the chosen style. See report.source_tags for candidates and removal reasons.'}),
         })
+        optional['filters'] = ('MAGE_TAG_FILTERS', {'tooltip': 'Shared Tag Filters recipe: clean source tags and request the same exclusions in prose/JSON. Assistant wording remains model-guided.'})
         optional['local_model'][1]['tooltip'] = 'A connected CLIP wins. Automatic in the browser reuses a compatible downstream text encoder when unambiguous; otherwise uses a small installed Qwen. If none exists, downloads the official Qwen3.5 2B fallback once.'
         return {'required': required, 'optional': optional, 'hidden': {'prompt': 'PROMPT', 'unique_id': 'UNIQUE_ID'}}
 
@@ -141,7 +143,7 @@ class PromptMageArchmageBeta(BaseNode):
                  style_preset='None (model choice)', style_notes='', reference_style='Preserve reference style',
                  memory_mode='Automatic', prompt=None, unique_id=None, assistant_backend='Local Qwen',
                  openai_model=DEFAULT_MODEL, openai_key_env='OPENAI_API_KEY', openai_timeout=180,
-                 source_tags='', source_tag_mode=TAG_MODES[0]):
+                 source_tags='', source_tag_mode=TAG_MODES[0], filters=None):
         from comfy_execution.graph import ExecutionBlocker
         if output_format not in ('Prose', 'MOSS JSON layout') or length not in ('Short', 'Balanced', 'Detailed'):
             raise ValueError('Choose a supported output format and length.')
@@ -162,8 +164,18 @@ class PromptMageArchmageBeta(BaseNode):
         style_applied = bool(style_guidance) and (image is None or reference_style == 'Apply selected style')
         if not style_applied:
             style_guidance = ''
+        recipe = check_recipe(filters)
+        if filters:
+            if recipe.get('preset') in ('Full color', 'Full color + clean photo') and any(x in (style_preset + ' ' + style_notes).casefold() for x in ('monochrome', 'black and white', 'greyscale', 'grayscale')):
+                raise ValueError('Full color tag filter conflicts with the selected style. Change the style or filter preset.')
+            source_tags = clean_text(source_tags, filters)
         tag_guidance, tag_report = screen_source_tags(source_tags, appearance, source_tag_mode,
                                                      style_active=style_applied, reference=image is not None)
+        if filters:
+            tag_report['filters'] = recipe
+            tag_guidance += '\nTag filter constraints (do not render as visible writing): ' + ' '.join(recipe['guidance'])
+            if recipe['banned'] or recipe['removed']:
+                tag_guidance += '\nAvoid these exact concepts: ' + ', '.join(sorted(set(recipe['banned'] + recipe['removed'])))
         tag_ideas = bool(tag_report['candidates'])
         guided = bool(concepts.strip() or instructions.strip() or tag_ideas)
         scene_concepts = concepts or ('Compose a coherent scene using the optional DART candidate concepts supplied in the instructions.' if tag_ideas else '')

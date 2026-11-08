@@ -39,6 +39,8 @@ Restart ComfyUI, refresh the browser, then search **Prompt Mage** or **Archmage*
 
 ## Pick the right tool
 
+**[Tag Filters](docs/TAG_FILTERS.md):** reusable Full color, No text/watermarks and Photography presets, custom bans/removals and protected tags. Share one recipe between DART Generate and Archmage.
+
 | Node | Use it for |
 | --- | --- |
 | **Archmage (Beta)** | Text/reference → prose or native MOSS layout JSON; the recommended starting point |

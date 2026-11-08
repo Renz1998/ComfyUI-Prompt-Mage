@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0 — Reusable tag filter presets
+
+- Adds Tag Filters with curated vocabulary/alias groups, independent generation bans and final cleanup, custom fields and explicit protected-tag conflict errors.
+- DART Generate accepts a filter recipe. Archmage accepts the same recipe, cleans incoming tags and receives prose/JSON exclusions as model-guided instructions.
+- Adds recipe socket suggestions and documentation. Existing socket order and unconnected behavior are preserved.
+
 ## 1.12.1 — Portrait and landscape ratios
 
 - Adds 4:5 and 5:4 to Resolution and Archmage's standalone canvas presets. Existing choices and defaults remain unchanged.

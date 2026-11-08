@@ -1,0 +1,1912 @@
+{
+  "id": "b01508cd-3140-407a-aa34-4574d8c0d7c1",
+  "revision": 0,
+  "last_node_id": 149,
+  "last_link_id": 241,
+  "nodes": [
+    {
+      "id": 117,
+      "type": "DanbooruTagsTransformerLoader",
+      "pos": [
+        -2835.9980323752543,
+        -609.1551555299969
+      ],
+      "size": [
+        380,
+        298
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "DART_MODEL",
+          "type": "DART_MODEL",
+          "links": [
+            232
+          ]
+        },
+        {
+          "name": "DART_TOKENIZER",
+          "type": "DART_TOKENIZER",
+          "links": [
+            233
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerLoader"
+      },
+      "widgets_values": [
+        "dart-v3-sft-preview-E (experimental)",
+        "cpu",
+        "auto",
+        "",
+        "main",
+        false
+      ],
+      "widgets_values_named": {
+        "model": "dart-v3-sft-preview-E (experimental)",
+        "device": "cpu",
+        "dtype": "auto",
+        "local_model_path": "",
+        "revision": "main",
+        "local_files_only": false
+      },
+      "color": "#563021",
+      "bgcolor": "#251c1b",
+      "boxcolor": "#ffaf69",
+      "shape": 2
+    },
+    {
+      "id": 119,
+      "type": "DanbooruTagsTransformerComposePromptV3",
+      "pos": [
+        -2876.5403921062875,
+        -257.8024468172984
+      ],
+      "size": [
+        419.773046875,
+        308
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            235
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerComposePromptV3"
+      },
+      "widgets_values": [
+        "sensitive",
+        "tall",
+        "very_long",
+        "original",
+        "",
+        "1girl, solo, foreshortening"
+      ],
+      "widgets_values_named": {
+        "rating": "sensitive",
+        "aspect_ratio": "tall",
+        "length": "very_long",
+        "copyright": "original",
+        "character": "",
+        "general": "1girl, solo, foreshortening"
+      },
+      "color": "#563021",
+      "bgcolor": "#251c1b",
+      "boxcolor": "#ffaf69",
+      "shape": 2
+    },
+    {
+      "id": 120,
+      "type": "DanbooruTagsTransformerGenerationConfig",
+      "pos": [
+        -3243.7411274164097,
+        -603.4327082604958
+      ],
+      "size": [
+        380,
+        278
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "DART SETTING",
+          "type": "DART SETTING",
+          "links": [
+            234
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerGenerationConfig"
+      },
+      "widgets_values": [
+        256,
+        0,
+        1,
+        1,
+        100,
+        1
+      ],
+      "widgets_values_named": {
+        "max_new_tokens": 256,
+        "min_new_tokens": 0,
+        "temperature": 1,
+        "top_p": 1,
+        "top_k": 100,
+        "num_beams": 1
+      },
+      "color": "#563021",
+      "bgcolor": "#251c1b",
+      "boxcolor": "#ffaf69",
+      "shape": 2
+    },
+    {
+      "id": 123,
+      "type": "DanbooruTagsTransformerResolution",
+      "pos": [
+        -1545.45391305943,
+        -888.9396492565031
+      ],
+      "size": [
+        510,
+        246
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "links": [
+            209,
+            214
+          ]
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": [
+            210,
+            215
+          ]
+        },
+        {
+          "name": "size",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerResolution"
+      },
+      "widgets_values": [
+        "2:3",
+        3.7,
+        32,
+        1024,
+        1024
+      ],
+      "widgets_values_named": {
+        "aspect_ratio": "2:3",
+        "megapixels": 3.7,
+        "multiple": 32,
+        "custom_width": 1024,
+        "custom_height": 1024
+      },
+      "color": "#563021",
+      "bgcolor": "#251c1b",
+      "boxcolor": "#ffaf69",
+      "shape": 2,
+      "dart_widget_values": {
+        "aspect_ratio": "2:3",
+        "megapixels": 3.7,
+        "multiple": 32,
+        "custom_width": 1024,
+        "custom_height": 1024
+      },
+      "extensions": {
+        "dart_widget_values": {
+          "aspect_ratio": "2:3",
+          "megapixels": 3.7,
+          "multiple": 32,
+          "custom_width": 1024,
+          "custom_height": 1024
+        }
+      }
+    },
+    {
+      "id": 124,
+      "type": "DanbooruTagsTransformerArchmageBeta",
+      "pos": [
+        -907.8599493178613,
+        -944.2580944017526
+      ],
+      "size": [
+        500,
+        1156
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "appearance",
+          "shape": 7,
+          "type": "ATELIER_APPEARANCE",
+          "link": 207
+        },
+        {
+          "name": "clip",
+          "shape": 7,
+          "type": "CLIP",
+          "link": 208
+        },
+        {
+          "name": "image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "label": "DART tags (scene ideas)",
+          "name": "source_tags",
+          "shape": 7,
+          "type": "STRING",
+          "link": 239
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 209
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 210
+        },
+        {
+          "name": "filters",
+          "type": "MAGE_TAG_FILTERS",
+          "link": 241,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "links": [
+            212,
+            213
+          ]
+        },
+        {
+          "name": "description",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "moss_json",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "links": []
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": []
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": []
+        },
+        {
+          "name": "status",
+          "type": "STRING",
+          "links": []
+        },
+        {
+          "name": "report",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerArchmageBeta",
+        "dart_seen_json_preview": true
+      },
+      "widgets_values": [
+        "",
+        "Detailed",
+        3177476934,
+        "randomize",
+        "MOSS JSON layout",
+        "Custom",
+        1024,
+        1024,
+        "Manual",
+        "follow the tags closely",
+        "Automatic",
+        4096,
+        false,
+        0,
+        3.7,
+        "Downscale only",
+        "lanczos",
+        "Direct / explicit",
+        "",
+        true,
+        "Photo · Bright lifestyle",
+        "",
+        "Preserve reference style",
+        "Automatic",
+        "Local Qwen",
+        "GPT-6.1 Terra · Recommended · $1 input / $5 output",
+        "OPENAI_API_KEY",
+        180,
+        "Scene ideas (protect character)"
+      ],
+      "widgets_values_named": {
+        "style_preset": "Photo · Bright lifestyle",
+        "style_notes": "",
+        "concepts": "",
+        "instructions": "follow the tags closely",
+        "source_tag_mode": "Scene ideas (protect character)",
+        "length": "Detailed",
+        "output_format": "MOSS JSON layout",
+        "seed": 3177476934,
+        "control_after_generate": "randomize",
+        "canvas_source": "Manual",
+        "aspect_ratio": "Custom",
+        "width": 1024,
+        "height": 1024,
+        "reference_style": "Preserve reference style",
+        "image_index": 0,
+        "image_megapixels": 3.7,
+        "resize_mode": "Downscale only",
+        "resize_method": "lanczos",
+        "assistant_backend": "OpenAI API",
+        "openai_model": "GPT-6.1 Terra · Recommended · $1 input / $5 output",
+        "openai_key_env": "OPENAI_API_KEY",
+        "openai_timeout": 180,
+        "local_model": "Automatic",
+        "thinking": true,
+        "max_tokens": 4096,
+        "language_style": "Direct / explicit",
+        "memory_mode": "Automatic",
+        "unload_after_generation": false,
+        "source_name": ""
+      },
+      "color": "#563021",
+      "bgcolor": "#251c1b",
+      "boxcolor": "#ffaf69",
+      "shape": 2,
+      "dart_widget_values": {
+        "style_preset": "Photo · Bright lifestyle",
+        "style_notes": "",
+        "concepts": "",
+        "instructions": "follow the tags closely",
+        "source_tag_mode": "Scene ideas (protect character)",
+        "length": "Detailed",
+        "output_format": "MOSS JSON layout",
+        "seed": 3177476934,
+        "control_after_generate": "randomize",
+        "canvas_source": "Manual",
+        "aspect_ratio": "Custom",
+        "width": 1024,
+        "height": 1024,
+        "reference_style": "Preserve reference style",
+        "image_index": 0,
+        "image_megapixels": 3.7,
+        "resize_mode": "Downscale only",
+        "resize_method": "lanczos",
+        "assistant_backend": "Local Qwen",
+        "openai_model": "GPT-6.1 Terra · Recommended · $1 input / $5 output",
+        "openai_key_env": "OPENAI_API_KEY",
+        "openai_timeout": 180,
+        "local_model": "Automatic",
+        "thinking": true,
+        "max_tokens": 4096,
+        "language_style": "Direct / explicit",
+        "memory_mode": "Automatic",
+        "unload_after_generation": false,
+        "source_name": ""
+      },
+      "extensions": {
+        "dart_widget_values": {
+          "style_preset": "Photo · Bright lifestyle",
+          "style_notes": "",
+          "concepts": "",
+          "instructions": "follow the tags closely",
+          "source_tag_mode": "Scene ideas (protect character)",
+          "length": "Detailed",
+          "output_format": "MOSS JSON layout",
+          "seed": 3177476934,
+          "control_after_generate": "randomize",
+          "canvas_source": "Manual",
+          "aspect_ratio": "Custom",
+          "width": 1024,
+          "height": 1024,
+          "reference_style": "Preserve reference style",
+          "image_index": 0,
+          "image_megapixels": 3.7,
+          "resize_mode": "Downscale only",
+          "resize_method": "lanczos",
+          "assistant_backend": "OpenAI API",
+          "openai_model": "GPT-6.1 Terra · Recommended · $1 input / $5 output",
+          "openai_key_env": "OPENAI_API_KEY",
+          "openai_timeout": 180,
+          "local_model": "Automatic",
+          "thinking": true,
+          "max_tokens": 4096,
+          "language_style": "Direct / explicit",
+          "memory_mode": "Automatic",
+          "unload_after_generation": false,
+          "source_name": ""
+        }
+      }
+    },
+    {
+      "id": 125,
+      "type": "DanbooruTagsTransformerAppearanceOverrides",
+      "pos": [
+        -1553.8081272242212,
+        -565.499937047872
+      ],
+      "size": [
+        523.4568845318413,
+        740
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "appearance",
+          "type": "ATELIER_APPEARANCE",
+          "links": [
+            207
+          ]
+        },
+        {
+          "name": "instructions",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerAppearanceOverrides"
+      },
+      "widgets_values": [
+        true,
+        "Main subject",
+        "",
+        "mage_character",
+        "Keep other appearance details",
+        "Black",
+        "",
+        "Keep unchanged",
+        "long hair",
+        "Blue",
+        "",
+        "Medium breasts",
+        "",
+        "Long",
+        "",
+        "Keep unchanged",
+        "",
+        "Fair",
+        "",
+        "Keep unchanged",
+        "",
+        "Keep unchanged",
+        "",
+        "",
+        true,
+        true,
+        "Keep unchanged",
+        ""
+      ],
+      "widgets_values_named": {
+        "enabled": true,
+        "subject": "Main subject",
+        "subject_custom": "",
+        "trigger": "mage_character",
+        "identity_mode": "Keep other appearance details",
+        "gender": "Keep unchanged",
+        "gender_custom": "",
+        "hair_color": "Black",
+        "hair_color_custom": "",
+        "hair_style": "Keep unchanged",
+        "hair_style_custom": "long hair",
+        "eye_color": "Blue",
+        "eye_color_custom": "",
+        "breast_size": "Medium breasts",
+        "breast_size_custom": "",
+        "hair_length": "Long",
+        "hair_length_custom": "",
+        "body_type": "Keep unchanged",
+        "body_type_custom": "",
+        "skin_tone": "Fair",
+        "skin_tone_custom": "",
+        "clothing": "Keep unchanged",
+        "clothing_custom": "",
+        "expression": "Keep unchanged",
+        "expression_custom": "",
+        "custom_overrides": "",
+        "strict_wording": true,
+        "apply_size_wording": true
+      },
+      "color": "#563021",
+      "bgcolor": "#251c1b",
+      "boxcolor": "#ffaf69",
+      "shape": 2,
+      "dart_widget_values": {
+        "enabled": true,
+        "subject": "Main subject",
+        "subject_custom": "",
+        "trigger": "mage_character",
+        "identity_mode": "Keep other appearance details",
+        "gender": "Keep unchanged",
+        "gender_custom": "",
+        "hair_color": "Black",
+        "hair_color_custom": "",
+        "hair_style": "Keep unchanged",
+        "hair_style_custom": "long hair",
+        "eye_color": "Blue",
+        "eye_color_custom": "",
+        "breast_size": "Medium breasts",
+        "breast_size_custom": "",
+        "hair_length": "Long",
+        "hair_length_custom": "",
+        "body_type": "Keep unchanged",
+        "body_type_custom": "",
+        "skin_tone": "Fair",
+        "skin_tone_custom": "",
+        "clothing": "Keep unchanged",
+        "clothing_custom": "",
+        "expression": "Keep unchanged",
+        "expression_custom": "",
+        "custom_overrides": "",
+        "strict_wording": true,
+        "apply_size_wording": true
+      },
+      "extensions": {
+        "dart_widget_values": {
+          "enabled": true,
+          "subject": "Main subject",
+          "subject_custom": "",
+          "trigger": "mage_character",
+          "identity_mode": "Keep other appearance details",
+          "gender": "Keep unchanged",
+          "gender_custom": "",
+          "hair_color": "Black",
+          "hair_color_custom": "",
+          "hair_style": "Keep unchanged",
+          "hair_style_custom": "long hair",
+          "eye_color": "Blue",
+          "eye_color_custom": "",
+          "breast_size": "Medium breasts",
+          "breast_size_custom": "",
+          "hair_length": "Long",
+          "hair_length_custom": "",
+          "body_type": "Keep unchanged",
+          "body_type_custom": "",
+          "skin_tone": "Fair",
+          "skin_tone_custom": "",
+          "clothing": "Keep unchanged",
+          "clothing_custom": "",
+          "expression": "Keep unchanged",
+          "expression_custom": "",
+          "custom_overrides": "",
+          "strict_wording": true,
+          "apply_size_wording": true
+        }
+      }
+    },
+    {
+      "id": 126,
+      "type": "CLIPTextEncode",
+      "pos": [
+        -277.8599493178615,
+        -944.2580944017526
+      ],
+      "size": [
+        428.8127910128442,
+        133.80254278421023
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 211
+        },
+        {
+          "name": "text",
+          "type": "STRING",
+          "widget": {
+            "name": "text"
+          },
+          "link": 212
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            221,
+            226
+          ]
+        }
+      ],
+      "title": "POSITIVE PROMPT - edit this",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "widgets_values_named": {
+        "text": ""
+      },
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 127,
+      "type": "PreviewAny",
+      "pos": [
+        -310.51524608720905,
+        -740.2913025159515
+      ],
+      "size": [
+        488.1195895493761,
+        1576.3946886899348
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 213
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {},
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 128,
+      "type": "EmptyFlux2LatentImage",
+      "pos": [
+        -277.8599493178615,
+        -184.25809440175354
+      ],
+      "size": [
+        353.22245748240357,
+        106
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 214
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 215
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            220
+          ]
+        }
+      ],
+      "title": "LATENT - 64 CHANNEL / FLUX.2",
+      "properties": {
+        "Node name for S&R": "EmptyFlux2LatentImage"
+      },
+      "widgets_values": [
+        1024,
+        1024,
+        1
+      ],
+      "widgets_values_named": {
+        "width": 1024,
+        "height": 1024,
+        "batch_size": 1
+      },
+      "color": "#323",
+      "bgcolor": "#535"
+    },
+    {
+      "id": 129,
+      "type": "ManualSigmas",
+      "pos": [
+        272.1400506821377,
+        -944.2580944017526
+      ],
+      "size": [
+        575.9612911488532,
+        58
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "SIGMAS",
+          "type": "SIGMAS",
+          "links": [
+            219
+          ]
+        }
+      ],
+      "title": "9 ManualSigmas",
+      "properties": {
+        "Node name for S&R": "ManualSigmas"
+      },
+      "widgets_values": [
+        "1.0000, 0.9920, 0.9780, 0.9500, 0.9000, 0.8100, 0.6750, 0.5150, 0.3350, 0.0000"
+      ],
+      "widgets_values_named": {
+        "sigmas": "1.0000, 0.9920, 0.9780, 0.9500, 0.9000, 0.8100, 0.6750, 0.5150, 0.3350, 0.0000"
+      },
+      "color": "#332922",
+      "bgcolor": "#593930"
+    },
+    {
+      "id": 130,
+      "type": "SamplerCustomAdvanced",
+      "pos": [
+        313.46236473170904,
+        -466.3242101042514
+      ],
+      "size": [
+        212.3638671875,
+        106
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "noise",
+          "type": "NOISE",
+          "link": 216
+        },
+        {
+          "name": "guider",
+          "type": "GUIDER",
+          "link": 217
+        },
+        {
+          "name": "sampler",
+          "type": "SAMPLER",
+          "link": 218
+        },
+        {
+          "name": "sigmas",
+          "type": "SIGMAS",
+          "link": 219
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 220
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "LATENT",
+          "links": [
+            222
+          ]
+        },
+        {
+          "name": "denoised_output",
+          "type": "LATENT",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SamplerCustomAdvanced"
+      },
+      "color": "#332922",
+      "bgcolor": "#593930"
+    },
+    {
+      "id": 131,
+      "type": "KSamplerSelect",
+      "pos": [
+        272.1400506821377,
+        -714.2580944017536
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "SAMPLER",
+          "type": "SAMPLER",
+          "links": [
+            218
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSamplerSelect"
+      },
+      "widgets_values": [
+        "euler"
+      ],
+      "widgets_values_named": {
+        "sampler_name": "euler"
+      },
+      "color": "#332922",
+      "bgcolor": "#593930"
+    },
+    {
+      "id": 132,
+      "type": "RandomNoise",
+      "pos": [
+        272.1400506821377,
+        -64.25809440175328
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "NOISE",
+          "type": "NOISE",
+          "links": [
+            216
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "RandomNoise"
+      },
+      "widgets_values": [
+        284190067882384,
+        "randomize"
+      ],
+      "widgets_values_named": {
+        "noise_seed": 284190067882384,
+        "control_after_generate": "randomize"
+      },
+      "color": "#332922",
+      "bgcolor": "#593930"
+    },
+    {
+      "id": 133,
+      "type": "ConditioningZeroOut",
+      "pos": [
+        -277.8599493178615,
+        85.7419055982466
+      ],
+      "size": [
+        204.134765625,
+        26
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 221
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ConditioningZeroOut"
+      },
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 134,
+      "type": "VAEDecode",
+      "pos": [
+        704.6675109276521,
+        -771.3873888488549
+      ],
+      "size": [
+        170.51189939590395,
+        46
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 222
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 223
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            224
+          ]
+        }
+      ],
+      "title": "DECODE IMAGE",
+      "properties": {
+        "Node name for S&R": "VAEDecode"
+      },
+      "color": "#332922",
+      "bgcolor": "#593930"
+    },
+    {
+      "id": 135,
+      "type": "SaveImage",
+      "pos": [
+        682.0076081639313,
+        -623.2772870798502
+      ],
+      "size": [
+        973.8063005596509,
+        1308.0751092246016
+      ],
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 224
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": []
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "zinechar2/img"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "zinechar2/img"
+      },
+      "color": "#332922",
+      "bgcolor": "#593930"
+    },
+    {
+      "id": 136,
+      "type": "BasicGuider",
+      "pos": [
+        272.1400506821377,
+        135.7419055982466
+      ],
+      "size": [
+        159.568359375,
+        46
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 225
+        },
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 226
+        }
+      ],
+      "outputs": [
+        {
+          "name": "GUIDER",
+          "type": "GUIDER",
+          "links": [
+            217
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "BasicGuider"
+      },
+      "color": "#332922",
+      "bgcolor": "#593930"
+    },
+    {
+      "id": 137,
+      "type": "ModelSamplingAuraFlow",
+      "pos": [
+        -277.8599493178615,
+        335.74190559824655
+      ],
+      "size": [
+        369.56218837511005,
+        82
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 227
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            229
+          ]
+        }
+      ],
+      "title": "NATIVE FLOW SHIFT - 5 / multiplier 1",
+      "properties": {
+        "Node name for S&R": "ModelSamplingAuraFlow"
+      },
+      "widgets_values": [
+        5,
+        "flow"
+      ],
+      "widgets_values_named": {
+        "shift": 5,
+        "sampling": "flow"
+      }
+    },
+    {
+      "id": 138,
+      "type": "UNETLoader",
+      "pos": [
+        -919.0837841166635,
+        381.4897359015784
+      ],
+      "size": [
+        514.1227193761413,
+        82
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            230
+          ]
+        }
+      ],
+      "title": "SFT DIFFUSION MODEL - BF16",
+      "properties": {
+        "Node name for S&R": "UNETLoader",
+        "models": [
+          {
+            "name": "moss_image_sft_int8_convrot.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/diffusion_models/moss_image_sft_int8_convrot.safetensors",
+            "directory": "diffusion_models"
+          }
+        ]
+      },
+      "widgets_values": [
+        "moss_image_base_bf16.safetensors",
+        "default"
+      ],
+      "widgets_values_named": {
+        "unet_name": "moss_image_base_bf16.safetensors",
+        "weight_dtype": "default"
+      },
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 139,
+      "type": "CLIPLoader",
+      "pos": [
+        -1552.938837371939,
+        252.42109417833208
+      ],
+      "size": [
+        510.62017621742507,
+        106
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "showAdvanced": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 0,
+          "links": [
+            208,
+            211
+          ]
+        }
+      ],
+      "title": "TEXT ENCODER - Qwen3.5 9B / INT8",
+      "properties": {
+        "Node name for S&R": "CLIPLoader",
+        "models": [
+          {
+            "name": "qwen3.5_9b_w4a8_gptq.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/text_encoders/qwen3.5_9b_w4a8_gptq.safetensors",
+            "directory": "text_encoders"
+          }
+        ]
+      },
+      "widgets_values": [
+        "qwen3.5_9b_int8_convrot.safetensors",
+        "moss_image",
+        "default"
+      ],
+      "widgets_values_named": {
+        "clip_name": "qwen35ForMossImage_v10_int8.safetensors",
+        "type": "moss_image",
+        "device": "default"
+      },
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 141,
+      "type": "SkipLayerGuidanceDiTSimple",
+      "pos": [
+        -277.8599493178615,
+        535.7419055982465
+      ],
+      "size": [
+        365.6070652210384,
+        130
+      ],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "showAdvanced": true,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 229
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            225
+          ]
+        }
+      ],
+      "title": "NEGATIVE-BRANCH LAYER SKIP - 22",
+      "properties": {
+        "Node name for S&R": "SkipLayerGuidanceDiTSimple"
+      },
+      "widgets_values": [
+        "",
+        "22",
+        0,
+        1
+      ],
+      "widgets_values_named": {
+        "double_layers": "",
+        "single_layers": "22",
+        "start_percent": 0,
+        "end_percent": 1
+      }
+    },
+    {
+      "id": 142,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        -913.7429104721487,
+        633.8543612235409
+      ],
+      "size": [
+        510.42073628850403,
+        82
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 230
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            227
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "lodestones-8-steps-dmd2-lora-moss.safetensors",
+        1
+      ],
+      "widgets_values_named": {
+        "lora_name": "lodestones-8-steps-dmd2-lora-moss.safetensors",
+        "strength_model": 1
+      },
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 143,
+      "type": "VAELoader",
+      "pos": [
+        -921.3477972974374,
+        788.0600773841851
+      ],
+      "size": [
+        518.3500822156204,
+        58
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            223
+          ]
+        }
+      ],
+      "title": "VAE - FLUX.2 SMALL DECODER",
+      "properties": {
+        "Node name for S&R": "VAELoader",
+        "models": [
+          {
+            "name": "flux2-vae_small.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/vae/flux2-vae_small.safetensors",
+            "directory": "vae"
+          }
+        ]
+      },
+      "widgets_values": [
+        "flux2-vae_small.safetensors"
+      ],
+      "widgets_values_named": {
+        "vae_name": "flux2-vae_small.safetensors"
+      },
+      "color": "#323",
+      "bgcolor": "#535"
+    },
+    {
+      "id": 144,
+      "type": "DanbooruTagsTransformerGenerate",
+      "pos": [
+        -2428.711122082758,
+        -612.1276066239403
+      ],
+      "size": [
+        400,
+        462
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "DART_MODEL",
+          "link": 232
+        },
+        {
+          "name": "tokenizer",
+          "type": "DART_TOKENIZER",
+          "link": 233
+        },
+        {
+          "name": "setting",
+          "shape": 7,
+          "type": "DART SETTING",
+          "link": 234
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 235
+        },
+        {
+          "name": "filters",
+          "type": "MAGE_TAG_FILTERS",
+          "link": 240,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            238,
+            239
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerGenerate"
+      },
+      "widgets_values": [
+        "<|bos|><rating>rating:sfw, rating:general</rating><copyright>original</copyright><character></character><general><|long|>1girl<|input_end|>",
+        1596642608,
+        "randomize",
+        true,
+        "",
+        "",
+        ""
+      ],
+      "widgets_values_named": {
+        "prompt": "<|bos|><rating>rating:sfw, rating:general</rating><copyright>original</copyright><character></character><general><|long|>1girl<|input_end|>",
+        "seed": 1596642608,
+        "control_after_generate": "randomize",
+        "animagine_order": true,
+        "ban_tags": "",
+        "remove_tags": "",
+        "keep_tags": ""
+      },
+      "color": "#563021",
+      "bgcolor": "#251c1b",
+      "boxcolor": "#ffaf69",
+      "shape": 2
+    },
+    {
+      "id": 145,
+      "type": "PreviewAny",
+      "pos": [
+        -2006.0749586846669,
+        -645.5231060818309
+      ],
+      "size": [
+        414.9040366094455,
+        629.9136422622009
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 238
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {},
+      "color": "#332922",
+      "bgcolor": "#593930"
+    },
+    {
+      "id": 146,
+      "type": "MarkdownNote",
+      "pos": [
+        -3240,
+        -1500
+      ],
+      "size": [
+        1080,
+        560
+      ],
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "START HERE · Local Archmage",
+      "properties": {},
+      "widgets_values": [
+        "# START HERE · Prompt Mage / Archmage\nThe supplied Zine DART Ideas workflow, with the character LoRA removed. Accelerator, manual sigmas, SLG, resolution and appearance settings are retained.\n\n**Local Qwen is selected. No OpenAI account or API key is needed.** Load CLIP is shared by Archmage and MOSS.\n\n1. Install Prompt Mage once and update ComfyUI for native MOSS/text generation support.\n2. Download the four files in MODEL DOWNLOADS into the listed folders. Refresh model lists and select their filenames.\n3. Accept [DART v3 access terms](https://huggingface.co/p1atdev/dart-v3-sft-preview-E) and authenticate on the ComfyUI server if required. DART downloads to the Hugging Face cache; CPU leaves VRAM for images.\n4. Run. First-use model loading/downloads can take longer. Models are not bundled.\n\n[Full setup guide](https://github.com/Renz1998/ComfyUI-Prompt-Mage/blob/main/docs/MODEL_DOWNLOADS.md)"
+      ]
+    },
+    {
+      "id": 147,
+      "type": "MarkdownNote",
+      "pos": [
+        -2090,
+        -1500
+      ],
+      "size": [
+        1080,
+        560
+      ],
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "MODEL DOWNLOADS",
+      "properties": {},
+      "widgets_values": [
+        "# MODEL DOWNLOADS · Required files\n- [MOSS Base BF16](https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/diffusion_models/moss_image_base_bf16.safetensors?download=true) → `models/diffusion_models/moss_image_base_bf16.safetensors` — image generator.\n- [Qwen3.5 9B INT8](https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/text_encoders/qwen3.5_9b_int8_convrot.safetensors?download=true) → `models/text_encoders/qwen3.5_9b_int8_convrot.safetensors` — shared local assistant and MOSS encoder.\n- [FLUX.2 small VAE](https://huggingface.co/Comfy-Org/MOSS-Image/resolve/main/vae/flux2-vae_small.safetensors?download=true) → `models/vae/flux2-vae_small.safetensors` — decodes the image.\n- [Lodestones DMD2 accelerator](https://huggingface.co/lodestones/MOSS-Image-Base-8-steps-dmd/resolve/main/lora_dmd2.safetensors?download=true) → `models/loras/`; **rename to `lodestones-8-steps-dmd2-lora-moss.safetensors`**. Author's file verified identical to the supplied setup's local file by SHA-256.\n- [DART v3 model / access terms](https://huggingface.co/p1atdev/dart-v3-sft-preview-E) — random tags; downloaded through DART Load after access approval.\n\nNo character LoRA is required. ManualSigmas and SkipLayerGuidanceDiTSimple are native ComfyUI nodes; update ComfyUI if missing."
+      ]
+    },
+    {
+      "id": 148,
+      "type": "MarkdownNote",
+      "pos": [
+        -940,
+        -1630
+      ],
+      "size": [
+        1080,
+        690
+      ],
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "HOW TO USE",
+      "properties": {},
+      "widgets_values": [
+        "# HOW TO USE · Ideas, character and canvas\n**DART Compose V3:** starting tags, rating and approximate tag length. Generate adds random ideas; its seed controls variety.\n\n**Appearance Overrides:** character trigger and selected traits take priority over conflicting source tags. The trigger is text, not a loaded character LoRA. Change the example traits or choose Keep unchanged.\n\n**Archmage Scene idea / WHAT:** your scene concept; leave empty to use DART candidates. **Writing rules / HOW:** constraints on the result. DART has its own source_tags input. Character/style conflicts are screened; broader relevance remains model-guided.\n\n**Style / theme:** visual treatment; the saved preset is Bright lifestyle. **Output format:** MOSS JSON supplies layout boxes; choose Prose to compare. prompt already feeds the positive encoder.\n\n**Resolution:** shared width/height feed Archmage and the latent. The supplied 3.7 MP setting is retained; reduce megapixels if memory is tight.\n\nThinking is enabled with a 4096-token limit. If the status reports a token limit, increase it or disable Thinking. Check Archmage's status/report when output is blocked.\n\nThe accelerator's manual sigma schedule and SLG are retained. Do not replace these with unrelated 50-step base starter settings."
+      ]
+    },
+    {
+      "id": 149,
+      "type": "DanbooruTagsTransformerTagFilters",
+      "pos": [
+        -2850,
+        450
+      ],
+      "size": [
+        650,
+        650
+      ],
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "filters",
+          "type": "MAGE_TAG_FILTERS",
+          "links": [
+            240,
+            241
+          ]
+        },
+        {
+          "name": "banned_tags",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "removed_tags",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "protected_tags",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "report",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerTagFilters"
+      },
+      "widgets_values": [
+        "Full color",
+        true,
+        true,
+        "",
+        "",
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      207,
+      125,
+      0,
+      124,
+      0,
+      "ATELIER_APPEARANCE"
+    ],
+    [
+      208,
+      139,
+      0,
+      124,
+      1,
+      "CLIP"
+    ],
+    [
+      211,
+      139,
+      0,
+      126,
+      0,
+      "CLIP"
+    ],
+    [
+      212,
+      124,
+      0,
+      126,
+      1,
+      "STRING"
+    ],
+    [
+      213,
+      124,
+      0,
+      127,
+      0,
+      "STRING"
+    ],
+    [
+      214,
+      123,
+      0,
+      128,
+      0,
+      "INT"
+    ],
+    [
+      215,
+      123,
+      1,
+      128,
+      1,
+      "INT"
+    ],
+    [
+      216,
+      132,
+      0,
+      130,
+      0,
+      "NOISE"
+    ],
+    [
+      217,
+      136,
+      0,
+      130,
+      1,
+      "GUIDER"
+    ],
+    [
+      218,
+      131,
+      0,
+      130,
+      2,
+      "SAMPLER"
+    ],
+    [
+      219,
+      129,
+      0,
+      130,
+      3,
+      "SIGMAS"
+    ],
+    [
+      220,
+      128,
+      0,
+      130,
+      4,
+      "LATENT"
+    ],
+    [
+      221,
+      126,
+      0,
+      133,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      222,
+      130,
+      0,
+      134,
+      0,
+      "LATENT"
+    ],
+    [
+      223,
+      143,
+      0,
+      134,
+      1,
+      "VAE"
+    ],
+    [
+      224,
+      134,
+      0,
+      135,
+      0,
+      "IMAGE"
+    ],
+    [
+      225,
+      141,
+      0,
+      136,
+      0,
+      "MODEL"
+    ],
+    [
+      226,
+      126,
+      0,
+      136,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      227,
+      142,
+      0,
+      137,
+      0,
+      "MODEL"
+    ],
+    [
+      229,
+      137,
+      0,
+      141,
+      0,
+      "MODEL"
+    ],
+    [
+      230,
+      138,
+      0,
+      142,
+      0,
+      "MODEL"
+    ],
+    [
+      232,
+      117,
+      0,
+      144,
+      0,
+      "DART_MODEL"
+    ],
+    [
+      233,
+      117,
+      1,
+      144,
+      1,
+      "DART_TOKENIZER"
+    ],
+    [
+      234,
+      120,
+      0,
+      144,
+      2,
+      "DART SETTING"
+    ],
+    [
+      235,
+      119,
+      0,
+      144,
+      3,
+      "STRING"
+    ],
+    [
+      238,
+      144,
+      0,
+      145,
+      0,
+      "STRING"
+    ],
+    [
+      209,
+      123,
+      0,
+      124,
+      4,
+      "INT"
+    ],
+    [
+      210,
+      123,
+      1,
+      124,
+      5,
+      "INT"
+    ],
+    [
+      239,
+      144,
+      0,
+      124,
+      3,
+      "STRING"
+    ],
+    [
+      240,
+      149,
+      0,
+      144,
+      4,
+      "MAGE_TAG_FILTERS"
+    ],
+    [
+      241,
+      149,
+      0,
+      124,
+      6,
+      "MAGE_TAG_FILTERS"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7320500000002853,
+      "offset": [
+        3714.4997002756963,
+        1161.9748376028967
+      ]
+    },
+    "frontendVersion": "1.57.1",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4,
+  "seed_widgets": {
+    "124": 9,
+    "132": 0,
+    "144": 1
+  }
+}

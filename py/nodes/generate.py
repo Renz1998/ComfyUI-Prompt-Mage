@@ -1,4 +1,5 @@
 from .base import BaseNode
+from ..dart.tag_filters import dart_lists, clean_text
 
 from ..dart.model import DartModel
 from ..dart.tokenizer.tokenizer import DartTokenizer
@@ -51,6 +52,7 @@ class DanbooruTagsTransformerGenerate(BaseNode):
             },
         }
 
+        input_types["optional"]["filters"] = ("MAGE_TAG_FILTERS", {"tooltip": "Connect a reusable Tag Filters recipe; share it with Archmage."})
         return input_types
 
     RETURN_TYPES = ("STRING",)
@@ -67,7 +69,10 @@ class DanbooruTagsTransformerGenerate(BaseNode):
         ban_tags="",
         remove_tags="",
         keep_tags="",
+        filters=None,
     ):
+        if filters:
+            ban_tags, remove_tags, keep_tags = dart_lists(filters, ban_tags, remove_tags, keep_tags)
         outputs = model.generate(tokenizer, prompt, seed, setting, ban_tags)
         token_ids = outputs[0]
 
@@ -78,4 +83,5 @@ class DanbooruTagsTransformerGenerate(BaseNode):
             result = tokenizer.decode_by_animagine(token_ids)
         else:
             result = tokenizer.decode(token_ids)
+        result = clean_text(result, filters) if filters else result
         return (preserve_tags(result, keep_tags),)

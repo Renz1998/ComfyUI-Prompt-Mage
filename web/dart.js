@@ -2,7 +2,7 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { convertToInput } from "../../extensions/core/widgetInputs.js";
 import { addTextPreviewWidgets, updateTextPreviewWidgets } from "../../extensions/core/textPreviewWidgets.js";
-import { connectionsFor, resolveSlot } from "./connections.mjs?v=1.12.0";
+import { connectionsFor, resolveSlot } from "./connections.mjs?v=1.13.0";
 import { installDesign, configureDesign, toggleDesign, toggleTheme, setDesignState, updateDesignBackend } from "./design.mjs?v=1.12.0";
 import { installStatusWidget, updateStatusWidget, finishedState, combineReports } from "./status.mjs";
 import { installUploadWidget, refreshUploadWidget } from "./upload.mjs?v=1.12.0";
@@ -186,6 +186,9 @@ app.registerExtension({
         };
         const configured = nodeType.prototype.onConfigure;
         nodeType.prototype.onConfigure = function (data) {
+            if (['DanbooruTagsTransformerGenerate','DanbooruTagsTransformerArchmageBeta'].includes(nodeData.name) && this.addInput && !this.inputs?.some(slot=>slot.name==='filters')) {
+                this.addInput('filters','MAGE_TAG_FILTERS',{shape:7,tooltip:'Shared recipe from Prompt Mage Tag Filters.'});
+            }
             configured?.apply(this, arguments);
             if (nodeData.name.endsWith('ArchmageBeta') && this.addInput && !this.inputs?.some(slot=>slot.name==='source_tags')) {
                 this.addInput('source_tags','STRING',{shape:7,tooltip:'Optional DART scene ideas. Character, style and explicit instructions take priority.'});

@@ -6,6 +6,11 @@ const composers = (slot) => [node("ComposePromptV3", slot)];
 const generators = (slot) => [node("Generate", slot), node("GenerateAdvanced", slot)];
 
 export function connectionsFor(type, name, slotType, isOutput) {
+    if (!isOutput && name === 'filters' && type?.startsWith(prefix)) return [node('TagFilters',0)];
+    if (type === prefix+'TagFilters') {
+        if (isOutput && name === 'filters') return [node('Generate','filters'),node('ArchmageBeta','filters')];
+        return isOutput ? [preview] : [];
+    }
     if (type === prefix + 'ArchmageBeta' && !isOutput && name === 'source_tags')
         return [node('Generate',0),node('Decode',0),node('DecodeBySplitedParts',4)];
     if ([prefix+'Generate',prefix+'Decode',prefix+'DecodeBySplitedParts'].includes(type) && isOutput && slotType === 'STRING')

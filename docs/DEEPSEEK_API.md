@@ -1,6 +1,6 @@
 # DeepSeek API in Archmage
 
-Select **Assistant → DeepSeek API**. Paste a DeepSeek key into the masked **DeepSeek key panel**, then click **Add key**. The field clears and collapses. Keys stay in ComfyUI server memory for this session, are never read back, and are not saved in workflows or browser storage. Re-add after restart. An existing `DEEPSEEK_API_KEY` server environment variable is supported too. OpenAI and DeepSeek credentials are separate.
+Select **Assistant → DeepSeek API**. Paste a DeepSeek key into the masked **DeepSeek key panel**, then click **Add key**. The field clears and collapses. Keys persist in the ComfyUI user directory, are never read back, and are not saved in workflows or browser storage. Keep that directory on persistent pod storage. An existing `DEEPSEEK_API_KEY` server environment variable is supported too. OpenAI and DeepSeek credentials are separate.
 
 ## Models checked November 9, 2026
 
@@ -20,3 +20,5 @@ MOSS composition can use multiple billable calls, including a format correction.
 DeepSeek support is not an “uncensored” guarantee. No comparative refusal benchmark was performed. Existing language/appearance controls remain writing instructions, not overrides of provider behavior.
 
 Validation uses mocked API responses and request inspection; a live DeepSeek key has not been used for an end-to-end generation test in this release. Local Qwen remains the default; existing workflows are not switched to a paid backend.
+
+Saved credentials use provider-specific plaintext files under `ComfyUI user directory/prompt_mage/credentials/`, with restricted permissions. Use persistent RunPod storage and protect server access. Replace overwrites only the selected provider; Remove deletes its saved file. Environment variables remain externally managed. See [storage details](GRIMOIRE.md).

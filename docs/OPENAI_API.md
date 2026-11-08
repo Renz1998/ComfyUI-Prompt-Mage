@@ -1,7 +1,7 @@
 # OpenAI in Archmage
 
 1. In **MODEL & PERFORMANCE**, change **Assistant → OpenAI API**.
-2. Paste your key into the **masked key panel**, then click **Add key**. The field clears and collapses to a configured indicator. Open **Add / replace key** to change it; **Remove session key** clears the session credential.
+2. Paste your key into the **masked key panel**, then click **Add key**. The field clears and collapses to a configured indicator. Open **Add / replace key** to change it; **Remove saved key** deletes that provider’s saved credential and clears its runtime copy.
 3. Choose **GPT-6.1 Terra** for lower-cost visual/writing work, or **GPT-6.1 Sol** for more demanding composition. Run as usual: concepts, reference images, appearance settings, styles and MOSS JSON still work.
 
 Local Qwen remains the default. Updating an existing workflow never switches it to a paid backend automatically. The local CLIP and VRAM/unload controls are ignored in API mode; the image-generation workflow can still use its usual local MOSS text encoder downstream.
@@ -27,9 +27,9 @@ Text → prose normally makes one request. Text → MOSS normally makes two: sce
 
 ## Key handling
 
-The panel sends the key to **your ComfyUI server**, which holds it in memory for that process. It is shared by this server's OpenAI nodes, does not go into workflow JSON, browser storage, repository files or node reports, and is lost when ComfyUI restarts. Use a trusted/private ComfyUI connection; remote servers should use HTTPS and appropriate access protection. Anyone allowed to queue workflows on that server may consume the configured key's API budget.
+The panel sends the key to **your ComfyUI server**, which saves it in its provider-specific credential file and keeps a runtime copy. It is shared by this server's OpenAI nodes, does not go into workflow JSON, browser storage, repository files or node reports, and survives restarts when the user directory is retained. Use a trusted/private ComfyUI connection; remote servers should use HTTPS and appropriate access protection. Anyone allowed to queue workflows on that server may consume the configured key's API budget.
 
-The configured indicator means a credential was added, not that billing/access was verified. The first generation reports invalid/expired keys, unavailable models or quota errors. A key stored in the server's `OPENAI_API_KEY` environment variable is also supported; removing the session key does not delete that environment variable. Advanced API workflows may override `openai_key_env` with another variable name. Never put the actual key in that field or any prompt.
+The configured indicator means a credential was added, not that billing/access was verified. The first generation reports invalid/expired keys, unavailable models or quota errors. A key stored in the server's `OPENAI_API_KEY` environment variable is also supported; removing the saved key does not delete that environment variable. Advanced API workflows may override `openai_key_env` with another variable name. Never put the actual key in that field or any prompt.
 
 The provided temporary test credential was used only for bounded live checks; no credential is bundled with the package. Add your own key when using the node, and revoke keys that have been shared in chat.
 
@@ -40,3 +40,5 @@ Thinking on requests **medium** reasoning. Off requests **none** for Terra/Luna 
 Requests use the [Responses API](https://developers.openai.com/api/docs/guides/responses) with `store: false`. Connected images are encoded and sent directly to OpenAI with the scene/appearance instructions. They are not uploaded to a separate image host. `store: false` does not mean that all provider-side logging or retention is disabled; the provider's data policies still apply.
 
 An in-flight synchronous request may finish and be billed even if you cancel ComfyUI or the request times out. Cancellation checks prevent subsequent generation stages after control returns. No automatic retry occurs after an uncertain network result. OpenAI applies its own content policies; Direct / explicit language and appearance instructions do not override them. Refusals stop the request rather than being rewritten into a claimed success.
+
+Saved credentials use provider-specific plaintext files under `ComfyUI user directory/prompt_mage/credentials/`, with restricted permissions. Use persistent RunPod storage and protect server access. Replace overwrites only the selected provider; Remove deletes its saved file. Environment variables remain externally managed. See [storage details](GRIMOIRE.md).

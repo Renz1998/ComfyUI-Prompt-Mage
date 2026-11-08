@@ -1,14 +1,14 @@
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from "./deepseek_key.mjs?v=1.14.0";
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from "./deepseek_key.mjs?v=1.15.1";
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { convertToInput } from "../../extensions/core/widgetInputs.js";
 import { addTextPreviewWidgets, updateTextPreviewWidgets } from "../../extensions/core/textPreviewWidgets.js";
 import { connectionsFor, resolveSlot } from "./connections.mjs?v=1.15.0";
-import { installDesign, configureDesign, toggleDesign, toggleTheme, setDesignState, updateDesignBackend } from "./design.mjs?v=1.14.0";
+import { installDesign, configureDesign, toggleDesign, toggleTheme, setDesignState, updateDesignBackend } from "./design.mjs?v=1.15.1";
 import { installStatusWidget, updateStatusWidget, finishedState, combineReports } from "./status.mjs";
-import { installUploadWidget, refreshUploadWidget } from "./upload.mjs?v=1.14.0";
-import { arrangeArchmage, updateArchmageControls, bindWorkflowEncoders } from "./archmage_ui.mjs?v=1.14.0";
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from "./openai_key.mjs?v=1.14.0";
+import { installUploadWidget, refreshUploadWidget } from "./upload.mjs?v=1.15.1";
+import { arrangeArchmage, updateArchmageControls, bindWorkflowEncoders } from "./archmage_ui.mjs?v=1.15.1";
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from "./openai_key.mjs?v=1.15.1";
 
 const labels = new Map();
 const layoutFields = ["canvas_width", "canvas_height", "layout_json"];
@@ -361,4 +361,4 @@ app.registerExtension({
         };
     },
 });
-import './grimoire.mjs?v=1.15.0';
+import './grimoire.mjs?v=1.15.1';

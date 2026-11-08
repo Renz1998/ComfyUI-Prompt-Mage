@@ -1,3 +1,4 @@
+from .credentials import stored_key, store_key
 """Official DeepSeek Chat Completions adapter; independent session credentials."""
 import json
 import os
@@ -15,7 +16,7 @@ _session_key = ''
 
 def key_status():
     environment = bool(os.environ.get('DEEPSEEK_API_KEY', '').strip())
-    return dict(configured=bool(_session_key) or environment, session_configured=bool(_session_key), environment_configured=environment)
+    return dict(configured=bool(_session_key) or bool(stored_key('deepseek')) or environment, saved_configured=bool(stored_key('deepseek')), session_configured=bool(_session_key), environment_configured=environment)
 
 
 def set_session_key(key):
@@ -26,7 +27,7 @@ def set_session_key(key):
 
 
 def resolve_key(name):
-    return (_session_key if name == 'DEEPSEEK_API_KEY' and _session_key else os.environ.get(name, '')).strip()
+    return (_session_key if name == 'DEEPSEEK_API_KEY' and _session_key else stored_key('deepseek') if name == 'DEEPSEEK_API_KEY' and stored_key('deepseek') else os.environ.get(name, '')).strip()
 
 
 class DeepSeekEncoder(OpenAIEncoder):
@@ -91,3 +92,14 @@ class DeepSeekEncoder(OpenAIEncoder):
             raise OpenAIRequestError('DeepSeek returned no final text. Increase the token ceiling or disable Thinking. No automatic retry was made.')
         # Private reasoning_content is deliberately neither returned nor persisted.
         return SimpleNamespace(args=[text.strip()], api_usage=call)
+
+
+def set_persistent_key(key):
+    global _session_key
+    previous = _session_key
+    set_session_key(key)
+    try:
+        store_key('deepseek', key)
+    except (OSError, ValueError):
+        _session_key = previous
+        raise ValueError('Could not save API key. Check ComfyUI user-directory permissions.') from None

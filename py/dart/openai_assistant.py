@@ -1,3 +1,4 @@
+from .credentials import stored_key, store_key
 """Server-side OpenAI Responses adapter. Credentials never enter workflow inputs."""
 import base64
 import io
@@ -21,7 +22,7 @@ _session_key = ''
 
 def key_status():
     environment = bool(os.environ.get('OPENAI_API_KEY', '').strip())
-    return dict(configured=bool(_session_key) or environment,
+    return dict(configured=bool(_session_key) or bool(stored_key('openai')) or environment, saved_configured=bool(stored_key('openai')),
                 session_configured=bool(_session_key), environment_configured=environment)
 
 
@@ -33,7 +34,7 @@ def set_session_key(key):
 
 
 def resolve_key(name):
-    return (_session_key if name == 'OPENAI_API_KEY' and _session_key else os.environ.get(name, '')).strip()
+    return (_session_key if name == 'OPENAI_API_KEY' and _session_key else stored_key('openai') if name == 'OPENAI_API_KEY' and stored_key('openai') else os.environ.get(name, '')).strip()
 
 
 class OpenAIRequestError(RuntimeError):
@@ -134,3 +135,14 @@ def execute_generation(clip, **kwargs):
         return result
     from comfy_extras.nodes_textgen import TextGenerate
     return TextGenerate.execute(clip=clip, **kwargs)
+
+
+def set_persistent_key(key):
+    global _session_key
+    previous = _session_key
+    set_session_key(key)
+    try:
+        store_key('openai', key)
+    except (OSError, ValueError):
+        _session_key = previous
+        raise ValueError('Could not save API key. Check ComfyUI user-directory permissions.') from None

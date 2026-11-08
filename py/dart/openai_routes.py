@@ -1,6 +1,6 @@
 """Write-only, same-origin session-key settings. Never returns a key or writes it to disk."""
 from urllib.parse import urlsplit
-from .openai_assistant import key_status, set_session_key
+from .openai_assistant import key_status, set_persistent_key
 
 
 def trusted_request(request):
@@ -44,8 +44,8 @@ def register_openai_routes():
             key = data.get('key')
             if not isinstance(key, str):
                 raise ValueError()
-            set_session_key(key.strip())
+            set_persistent_key(key.strip())
         except (ValueError, TypeError, AttributeError):
-            return web.json_response({'error':'Enter an OpenAI API key beginning with sk-.'},status=400)
+            return web.json_response({'error':'Check key format and ComfyUI user-directory write permissions.'},status=400)
         return web.json_response(key_status(), headers={'Cache-Control':'no-store'})
     return True

@@ -12,13 +12,21 @@ def register_grimoire_routes():
         return False
 
     @PromptServer.instance.routes.get('/prompt_mage/grimoire/history')
+    @PromptServer.instance.routes.post('/prompt_mage/grimoire/history')
     async def history(request):
         if request.headers.get('Sec-Fetch-Site') != 'same-origin' and not trusted_request(request):
             return web.json_response({'error':'Use this ComfyUI page.'}, status=403)
         try:
+            if request.method == 'POST':
+                if request.content_type != 'application/json' or not request.content_length or request.content_length > 4096:
+                    raise ValueError('Expected a small settings request.')
+                data = await request.json()
+                chapter = data.get('id','')
+            else:
+                chapter = request.query.get('id','')
             with LOCK:
-                value = read_memory(memory_path(request.query.get('id','')))
-        except (ValueError, OSError):
+                value = read_memory(memory_path(chapter))
+        except (ValueError, OSError, TypeError, AttributeError):
             return web.json_response({'error':'Could not load conversation.'}, status=400)
         return web.json_response(value, headers={'Cache-Control':'no-store'})
     return True

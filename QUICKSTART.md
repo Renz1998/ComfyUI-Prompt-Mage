@@ -8,7 +8,7 @@ Follow [README installation](README.md#install), restart ComfyUI and refresh you
 
 **Full image workflow:** [download the main Archmage workflow](workflows/start-here/03-moss-full-workflow.json) and follow the [model downloads guide](docs/MODEL_DOWNLOADS.md). This is the supplied Zine DART Ideas graph with only its character LoRA removed; accelerator/custom sampling settings remain.
 
-**Prefer the OpenAI API?** Select Assistant → OpenAI API in Archmage, paste a key into its masked panel and click Add key. It clears/collapses after adding and stays in server memory until restart. Terra and Sol are recommended; the model dropdown shows cost labels. [API guide](docs/OPENAI_API.md).
+**Prefer the OpenAI API?** Select Assistant → OpenAI API in Archmage, paste a key into its masked panel and click Add key. It clears/collapses after adding and is saved in the ComfyUI user directory for reuse after restart. Terra and Sol are recommended; the model dropdown shows cost labels. [API guide](docs/OPENAI_API.md).
 
 Connect CLIP from the same compatible Qwen loader used by MOSS, or leave Local model on Automatic. In the browser it reuses an unambiguous compatible downstream encoder; otherwise it chooses the smallest installed Qwen. With none installed, Archmage downloads a pinned official Qwen3.5 2B once. Reference images require vision weights. [Details](docs/ARCHMAGE_USABILITY.md#automatic-encoder-and-memory).
 

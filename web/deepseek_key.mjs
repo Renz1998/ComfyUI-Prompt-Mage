@@ -16,9 +16,9 @@ export function installDeepSeekKeyWidget(node, api) {
     const input = document.createElement('input'); input.type='password'; input.autocomplete='off';
     input.placeholder='Paste DeepSeek API key'; input.setAttribute('aria-label','DeepSeek API key (not saved in workflow)');
     const save = document.createElement('button'); save.type='button'; save.textContent='Add key';
-    const remove = document.createElement('button'); remove.type='button'; remove.textContent='Remove session key';
+    const remove = document.createElement('button'); remove.type='button'; remove.textContent='Remove saved key';
     const help = document.createElement('small');
-    help.textContent='Shared by this ComfyUI server. Memory only; re-add after restart. Never included in workflows. API charges apply. Use a trusted/private server connection.';
+    help.textContent='Shared by this ComfyUI server. Saved in this server’s ComfyUI user directory; use persistent pod storage. Never included in workflows. API charges apply. Use a trusted/private server connection.';
     bar.append(status,change); form.append(input,save,remove); root.append(bar,form,help);
     let open=true, busy=false, session=false;
     const height=()=>open?166:96;
@@ -27,8 +27,8 @@ export function installDeepSeekKeyWidget(node, api) {
     widget.serialize=false;
     const resize=()=>{form.hidden=!open;const size=node.computeSize();node.setSize([Math.max(500,node.size[0],size[0]),size[1]]);node.setDirtyCanvas(true,true);};
     const render=data=>{
-        session=Boolean(data.session_configured);
-        status.textContent=data.configured?(session?'✓ API key configured for this session':'✓ Using server environment key'):'API key not configured';
+        session=Boolean(data.session_configured || data.saved_configured);
+        status.textContent=data.configured?(data.saved_configured?'✓ API key saved on this server':session?'✓ API key configured for this session':'✓ Using server environment key'):'API key not configured';
         remove.disabled=!session; open=!data.configured; input.value=''; resize();
     };
     const read=async()=>{
@@ -41,7 +41,7 @@ export function installDeepSeekKeyWidget(node, api) {
         try{
             const response=await api.fetchApi('/prompt_mage/deepseek/key',{method:'POST',
                 headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
-            if(!response.ok){status.textContent='Key not added · check its format and server connection';return;}
+            if(!response.ok){status.textContent='Key not saved · check format, storage permissions and connection';return;}
             render(await response.json());
             window.dispatchEvent(new Event('prompt-mage-deepseek-key-changed'));
         }catch{status.textContent='Key not added · check server connection';}

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.15.1 — RunPod UI and saved provider keys
+
+- Fixes Grimoire creation on HTTP origins without crypto.randomUUID. Uses random bytes for chapter IDs instead.
+- Restores history on HTTP via an origin-checked POST and adds Refresh history.
+- UI-added OpenAI and DeepSeek keys now persist separately in the ComfyUI user directory with atomic replacement and restricted file permissions. Remove deletes only that provider's saved key; environment credentials remain externally managed.
+
 ## 1.15.0 — Grimoire Beta
 
 - Separate persistent conversation node with system/task/pinned instructions, appearance and image references, local/OpenAI/DeepSeek backends and server-side atomic history files.

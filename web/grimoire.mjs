@@ -1,12 +1,17 @@
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.15.0';
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.15.0';
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.15.1';
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.15.1';
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
+    const chapterId=()=>{
+        if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
+        const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
+        return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+    };
     const field = name => node.widgets?.find(w=>w.name===name);
-    if (!field('conversation_id')?.value) field('conversation_id').value=crypto.randomUUID();
+    if (!field('conversation_id')?.value) field('conversation_id').value=chapterId();
     const root=document.createElement('section');
     root.style.cssText='padding:14px;background:linear-gradient(135deg,#211a32,#152c31);border:1px solid #ba9957;border-radius:12px;color:#eee;display:flex;flex-direction:column;gap:10px;box-sizing:border-box;height:100%;font:13px sans-serif';
     const title=document.createElement('strong');title.textContent='✦ GRIMOIRE · Your living spellbook';
@@ -30,7 +35,7 @@ export function installGrimoire(node) {
     }
     async function load() {
         const version=++requestVersion;
-        try {const response=await api.fetchApi('/prompt_mage/grimoire/history?id='+encodeURIComponent(field('conversation_id').value));if(!response.ok)throw Error();const value=await response.json();if(version===requestVersion)render(value);}
+        try {const response=await api.fetchApi('/prompt_mage/grimoire/history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:field('conversation_id').value})});if(!response.ok)throw Error();const value=await response.json();if(version===requestVersion)render(value);}
         catch{status.textContent='History unavailable · start/restart ComfyUI or check the chapter ID';}
     }
     async function run(action) {
@@ -45,7 +50,8 @@ export function installGrimoire(node) {
     button('Regenerate',()=>void run('Regenerate'));
     button('Compact now',()=>void run('Compact now'));
     button('Clear conversation',()=>void run('Clear conversation'));
-    button('New chapter',()=>{if(busy){status.textContent='Wait for this queued turn to finish or cancel it first.';return;}field('conversation_id').value=crypto.randomUUID();field('summary_override').value='';render({turns:[],summary:''});void load();});
+    button('New chapter',()=>{if(busy){status.textContent='Wait for this queued turn to finish or cancel it first.';return;}field('conversation_id').value=chapterId();field('summary_override').value='';render({turns:[],summary:''});void load();});
+    button('Refresh history',()=>void load());
     button('Copy latest',async()=>{try{await navigator.clipboard.writeText(latest);status.textContent='Latest response copied';}catch{status.textContent='Clipboard unavailable · select and copy the response';}});
     button('Edit summary',()=>{field('summary_override').value=summary.value;status.textContent='Edit Summary override below; it is applied on the next successful run.';});
     root.append(title,notice,status,history,summary,buttons);
@@ -67,7 +73,7 @@ export function installGrimoire(node) {
     const failed=()=>{busy=false;status.textContent='Execution ended or failed. Review the ComfyUI error before retrying.';};
     api.addEventListener('execution_error',failed);api.addEventListener('execution_interrupted',failed);
     const removed=node.onRemoved;node.onRemoved=function(){api.removeEventListener('execution_error',failed);api.removeEventListener('execution_interrupted',failed);removed?.apply(this,arguments);};
-    const configured=node.onConfigure;node.onConfigure=function(){configured?.apply(this,arguments);if(!field('conversation_id').value)field('conversation_id').value=crypto.randomUUID();controls();void load();};
+    const configured=node.onConfigure;node.onConfigure=function(){configured?.apply(this,arguments);if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
     controls();void load();
 }
 

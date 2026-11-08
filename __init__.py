@@ -114,3 +114,6 @@ NODE_CLASS_MAPPINGS['DanbooruTagsTransformerTagFilters'] = PromptMageTagFilters
 NODE_DISPLAY_NAME_MAPPINGS['DanbooruTagsTransformerTagFilters'] = 'Prompt Mage · Tag Filters'
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS", "WEB_DIRECTORY"]
+
+from .py.dart.deepseek_routes import register_deepseek_routes
+register_deepseek_routes()

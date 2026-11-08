@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.14.0 — DeepSeek API
+
+- Adds official DeepSeek Flash and V4 Pro options to Archmage, separate masked session credentials, thinking controls, usage reporting and provider-specific errors.
+- Flash supports reference images; Pro rejects images before a request. Local Qwen remains the default. No automatic network retries or private reasoning output.
+- Official documentation checked 2026-11-09; mocked request/response tests only, no live paid test or comparative refusal benchmark.
+
 ## 1.13.0 — Reusable tag filter presets
 
 - Adds Tag Filters with curated vocabulary/alias groups, independent generation bans and final cleanup, custom fields and explicit protected-tag conflict errors.

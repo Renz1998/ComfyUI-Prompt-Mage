@@ -20,7 +20,7 @@ const context = {
     installStatusWidget() {}, updateStatusWidget(node, report) {node.atelierLastReport=report;}, finishedState(node) {return node.atelierLastReport?.status || 'done';},
     combineReports, arrangeArchmage, updateArchmageControls, bindWorkflowEncoders,
     installUploadWidget() {}, refreshUploadWidget() {},
-    installOpenAIKeyWidget() {}, refreshOpenAIKeyWidget() {},
+    installDeepSeekKeyWidget() {}, refreshDeepSeekKeyWidget() {}, installOpenAIKeyWidget() {}, refreshOpenAIKeyWidget() {},
     connectionsFor, resolveSlot, LGraphCanvas: Canvas,
     addTextPreviewWidgets() {}, updateTextPreviewWidgets(node, message) { previewMessage = message; }, convertToInput() {},
     LiteGraph: {

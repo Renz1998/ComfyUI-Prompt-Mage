@@ -1,3 +1,4 @@
+from ..dart.deepseek_assistant import DeepSeekEncoder, MODELS as DEEPSEEK_MODELS, DEFAULT_MODEL as DEEPSEEK_DEFAULT
 from ..dart.openai_assistant import execute_generation, OpenAIEncoder, MODELS, DEFAULT_MODEL
 """Isolated beta composer; existing Scene Composer behavior stays unchanged."""
 import json
@@ -116,13 +117,15 @@ class PromptMageArchmageBeta(BaseNode):
             'style_notes': ('STRING', {'default': '', 'multiline': True, 'tooltip': 'Refine any preset or write your own style. Required for Custom. Examples: cheap phone camera, flat afternoon light, no color grading. These guide generated text, not model weights or image pixels.'}),
             'reference_style': (['Preserve reference style', 'Apply selected style'], {'default': 'Preserve reference style', 'tooltip': 'With an image, preserve its visible medium and camera treatment by default. Apply selected style explicitly restyles the caption while retaining subjects and spatial details unless your instructions change them.'}),
             'memory_mode': (['Automatic', 'Native ComfyUI'], {'default': 'Automatic', 'tooltip': 'Automatic asks ComfyUI to offload competing models and reserve 2 GB for generation before each run. Interrupted runs release this assistant. Does not clear all models. Native leaves preparation to ComfyUI.'}),
-            'assistant_backend': (['Local Qwen', 'OpenAI API'], {'default': 'Local Qwen', 'tooltip': 'Local keeps inference on this machine. OpenAI sends scene text, appearance instructions and any connected reference image to OpenAI and incurs API charges. It does not use the local CLIP.'}),
+            'assistant_backend': (['Local Qwen', 'OpenAI API', 'DeepSeek API'], {'default': 'Local Qwen', 'tooltip': 'Local keeps inference on this machine. API providers receive scene text, appearance instructions and supported reference images and charge for requests. API mode does not use the local CLIP.'}),
             'openai_model': (list(MODELS), {'default': DEFAULT_MODEL, 'tooltip': 'Terra: recommended lower-cost visual/writing model. Sol: recommended for harder composition. Astra: expensive. Labels show standard USD per 1M input/output tokens, checked 2026-11-07; pricing/access can change. Reasoning counts toward billed output.'}),
             'openai_key_env': ('STRING', {'default': 'OPENAI_API_KEY', 'tooltip': 'Environment variable NAME on the ComfyUI server, not the API key. Restart the server after setting it. Keys are never saved in workflows by this node.'}),
             'openai_timeout': ('INT', {'default': 180, 'min': 10, 'max': 600, 'tooltip': 'Seconds per API request. A timeout/cancel may still incur charges. No automatic network retries. Text → MOSS normally uses two requests; a schema correction may add one.'}),
             'source_tags': ('STRING', {'forceInput': True, 'tooltip': 'Optional DART Generate / Decode tags. Treated as candidate scene ideas, not character identity or mandatory instructions. Appearance settings, explicit scene ideas, style and reference images take priority.'}),
             'source_tag_mode': (TAG_MODES, {'default': TAG_MODES[0], 'tooltip': 'Scene ideas removes known random hair, eye, body and named-character traits. Keep unselected appearance allows unselected traits but still removes known conflicts with chosen replacements. Both discard metadata and defer to the chosen style. See report.source_tags for candidates and removal reasons.'}),
         })
+        optional['deepseek_model'] = (list(DEEPSEEK_MODELS), {'default': DEEPSEEK_DEFAULT, 'tooltip': 'Flash is the current image-capable alias. Pro is text-only here. API pricing/access can change; see DeepSeek pricing.'})
+        optional['deepseek_timeout'] = ('INT', {'default': 180, 'min': 10, 'max': 600, 'tooltip': 'Seconds per paid request. No automatic network retries; cancellation cannot undo billing.'})
         optional['filters'] = ('MAGE_TAG_FILTERS', {'tooltip': 'Shared Tag Filters recipe: clean source tags and request the same exclusions in prose/JSON. Assistant wording remains model-guided.'})
         optional['local_model'][1]['tooltip'] = 'A connected CLIP wins. Automatic in the browser reuses a compatible downstream text encoder when unambiguous; otherwise uses a small installed Qwen. If none exists, downloads the official Qwen3.5 2B fallback once.'
         return {'required': required, 'optional': optional, 'hidden': {'prompt': 'PROMPT', 'unique_id': 'UNIQUE_ID'}}
@@ -143,7 +146,7 @@ class PromptMageArchmageBeta(BaseNode):
                  style_preset='None (model choice)', style_notes='', reference_style='Preserve reference style',
                  memory_mode='Automatic', prompt=None, unique_id=None, assistant_backend='Local Qwen',
                  openai_model=DEFAULT_MODEL, openai_key_env='OPENAI_API_KEY', openai_timeout=180,
-                 source_tags='', source_tag_mode=TAG_MODES[0], filters=None):
+                 source_tags='', source_tag_mode=TAG_MODES[0], filters=None, deepseek_model=DEEPSEEK_DEFAULT, deepseek_timeout=180):
         from comfy_execution.graph import ExecutionBlocker
         if output_format not in ('Prose', 'MOSS JSON layout') or length not in ('Short', 'Balanced', 'Detailed'):
             raise ValueError('Choose a supported output format and length.')
@@ -151,8 +154,8 @@ class PromptMageArchmageBeta(BaseNode):
             raise ValueError('Choose a supported canvas source.')
         if memory_mode not in ('Automatic', 'Native ComfyUI'):
             raise ValueError('Choose a supported memory mode.')
-        if assistant_backend not in ('Local Qwen', 'OpenAI API'):
-            raise ValueError('Choose Local Qwen or OpenAI API.')
+        if assistant_backend not in ('Local Qwen', 'OpenAI API', 'DeepSeek API'):
+            raise ValueError('Choose Local Qwen, OpenAI API or DeepSeek API.')
         inputs = (prompt or {}).get(str(unique_id), {}).get('inputs', {})
         wired_size = any(isinstance(inputs.get(key), list) for key in ('width', 'height'))
         width, height = resolve_canvas(width, height, 'Custom' if wired_size else aspect_ratio)
@@ -220,10 +223,13 @@ class PromptMageArchmageBeta(BaseNode):
         if source_tags.strip():
             report['note'] += f" DART: {len(tag_report['candidates'])} candidate ideas; {len(tag_report['removed'])} filtered. See report.source_tags for reasons; relevance is model-guided."
         encoder = (OpenAIEncoder(openai_model, openai_key_env, openai_timeout) if assistant_backend == 'OpenAI API'
+                   else DeepSeekEncoder(deepseek_model, timeout=deepseek_timeout) if assistant_backend == 'DeepSeek API'
                    else load_local_clip(local_model, clip, auto_download=True))
         report['assistant_backend'] = assistant_backend
         if assistant_backend == 'OpenAI API':
             report['encoder_source'] = 'OpenAI Responses API'
+        if assistant_backend == 'DeepSeek API':
+            report['encoder_source'] = 'DeepSeek Chat Completions API'
         description = ''
         moss = None
         with offload_after(encoder, unload_after_generation, release_on_error=True):

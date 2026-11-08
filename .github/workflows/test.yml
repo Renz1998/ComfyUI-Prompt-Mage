@@ -26,3 +26,4 @@ jobs:
       - run: node tests/test_batch_runner.mjs
       - run: node tests/test_archmage_ui.mjs
       - run: node tests/test_openai_key.mjs
+      - run: node tests/test_deepseek_key.mjs

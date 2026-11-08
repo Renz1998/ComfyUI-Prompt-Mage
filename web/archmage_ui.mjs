@@ -24,7 +24,7 @@ export function bindWorkflowEncoders(snapshot) {
     const output = snapshot.output || {};
     for (const [id, node] of Object.entries(output)) {
         if (node.class_type !== ARCHMAGE) continue;
-        if (node.inputs.assistant_backend === 'OpenAI API') {
+        if (['OpenAI API','DeepSeek API'].includes(node.inputs.assistant_backend)) {
             delete node.inputs.clip; // Preserve the visible wire, skip its unused execution dependency.
             continue;
         }
@@ -48,7 +48,7 @@ const GROUPS = [
     ['SCENE', ['concepts', 'instructions', 'source_tag_mode', 'length', 'output_format', 'seed', 'control_after_generate']],
     ['CANVAS', ['canvas_source', 'aspect_ratio', 'width', 'height']],
     ['REFERENCE IMAGE · OPTIONAL', ['reference_style', 'image_index', 'image_megapixels', 'resize_mode', 'resize_method']],
-    ['MODEL & PERFORMANCE', ['assistant_backend', 'mage_openai_key', 'openai_model', 'openai_key_env', 'openai_timeout', 'local_model', 'thinking', 'max_tokens', 'language_style', 'memory_mode', 'unload_after_generation', 'source_name']],
+    ['MODEL & PERFORMANCE', ['assistant_backend', 'mage_openai_key', 'mage_deepseek_key', 'deepseek_model', 'deepseek_timeout', 'openai_model', 'openai_key_env', 'openai_timeout', 'local_model', 'thinking', 'max_tokens', 'language_style', 'memory_mode', 'unload_after_generation', 'source_name']],
 ];
 
 export function arrangeArchmage(node) {
@@ -99,12 +99,16 @@ export function updateArchmageControls(node) {
     }
     const tagsSlot = node.inputs?.find(slot=>slot.name==='source_tags');
     if (tagsSlot) tagsSlot.label = 'DART tags (scene ideas)';
-    const remote = get('assistant_backend')?.value === 'OpenAI API';
-    for (const name of ['openai_model', 'openai_timeout']) if (get(name)) get(name).hidden = !remote;
+    const backend = get('assistant_backend')?.value;
+    const remote = ['OpenAI API','DeepSeek API'].includes(backend);
+    for (const name of ['deepseek_model','deepseek_timeout']) if (get(name)) get(name).hidden = backend !== 'DeepSeek API';
+    for (const name of ['openai_model', 'openai_timeout']) if (get(name)) get(name).hidden = backend !== 'OpenAI API';
     if (get('openai_key_env')) get('openai_key_env').hidden = true; // Advanced env configuration remains API/workflow-compatible.
     for (const name of ['local_model', 'memory_mode', 'unload_after_generation']) if (get(name)) get(name).hidden = remote;
     if (get('assistant_backend')) get('assistant_backend').label = 'Assistant (local or paid API)';
-    if (get('thinking')) get('thinking').tooltip = remote
+    if (get('thinking')) get('thinking').tooltip = backend === 'DeepSeek API'
+        ? 'On: DeepSeek thinking enabled at high effort. Off: thinking explicitly disabled. Thinking consumes the token budget and is billable. Private reasoning is not returned.'
+        : remote
         ? 'On: medium API reasoning. Off: no reasoning for Terra/Luna; minimum low for Sol/Astra. Reasoning consumes tokens and costs money. No private reasoning trace is returned.'
         : 'Ask a compatible local model to plan before answering. Thinking shares the generation token budget.';
     const hasImage = node.inputs?.some(slot => slot.name === 'image' && slot.link != null);

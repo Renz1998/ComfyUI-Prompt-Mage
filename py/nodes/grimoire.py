@@ -10,6 +10,8 @@ from ..dart.vision import prepare_caption_image, caption_image
 from ..dart.memory import offload_after
 from ..dart.text_output import final_text
 from ..dart.moss import read_layout
+from ..dart.style_presets import STYLE_OPTIONS
+from ..dart.grimoire_prompt import response_contract, extract_response
 
 
 class PromptMageGrimoire(BaseNode):
@@ -32,7 +34,7 @@ class PromptMageGrimoire(BaseNode):
             'task_instructions': ('STRING', {'default':'', 'multiline':True, 'tooltip':'Current project, sequence, schema and constraints. Always included separately from history.'}),
             'pinned_facts': ('STRING', {'default':'', 'multiline':True, 'tooltip':'Explicit durable facts. Always sent verbatim. Nothing is silently learned or added here.'}),
             'message': ('STRING', {'default':'Describe an adult traveler reading a map in a lantern-lit inn.', 'multiline':True, 'tooltip':'Next message. Next step sends a continuation request. Regenerate replaces the last answer without adding a new user turn.'}),
-            'action': (['Send','Next step','Regenerate','Compact now','Clear conversation','Use latest'], {'default':'Use latest','tooltip':'Run/Queue reuses the saved reply by default. Clear removes stored summary/history but keeps your configured system/task/pinned fields. Clear/compact do not run downstream generators.'}),
+            'action': (['Send','Next step','Regenerate','Compact now','Clear conversation','Use latest','Edit message'], {'default':'Use latest','tooltip':'Run/Queue reuses the saved reply by default. Clear removes stored summary/history but keeps your configured system/task/pinned fields. Clear/compact do not run downstream generators.'}),
             'assistant_backend': (['Local Qwen','OpenAI API','DeepSeek API'], {'default':'Local Qwen','tooltip':'API modes send conversation text and supported image references to the selected provider. Charges apply.'}),
             'openai_model': (list(MODELS), {'default':DEFAULT_MODEL}),
             'deepseek_model': (list(DS_MODELS), {'default':DS_DEFAULT}),
@@ -41,7 +43,7 @@ class PromptMageGrimoire(BaseNode):
             'max_tokens': ('INT', {'default':4096,'min':128,'max':16384,'step':128}),
             'auto_compact': ('BOOLEAN', {'default':True,'tooltip':'Summarize older turns above 24,000 characters or 12 turns, retaining the latest six turns verbatim. Compaction may lose details and adds one model call.'}),
             'summary_override': ('STRING', {'default':'','multiline':True,'tooltip':'Nonempty text replaces the stored summary on a successful run. Copy/edit the memory_summary output here. Clear the field afterward to avoid repeatedly replacing newer summaries.'}),
-            'output_selection': (['Latest response','JSON only','JSON field','MOSS JSON layout'], {'default':'Latest response','tooltip':'Only output is extracted; latest_response retains the answer. MOSS additionally validates schema/boxes against width and height. Invalid output is saved for inspection and blocked downstream.'}),
+            'output_selection': (['Latest response','JSON only','JSON field','MOSS JSON layout'], {'default':'MOSS JSON layout','tooltip':'In Prompt workshop this also instructs the model. Only output is extracted; latest_response retains the answer. MOSS additionally validates schema/boxes against width and height. Invalid output is saved for inspection and blocked downstream.'}),
             'json_field': ('STRING', {'default':'prompt','tooltip':'Dot-separated object field, e.g. summary.caption. Used only for JSON field.'}),
             'unload_after_generation': ('BOOLEAN', {'default':False}),
         }, 'optional': {
@@ -50,17 +52,22 @@ class PromptMageGrimoire(BaseNode):
             'appearance': ('ATELIER_APPEARANCE', {'tooltip':'Current character recipe is included on every turn, separately from compacted history. Edits text, not image pixels.'}),
             'width': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution width as the latent.'}),
             'height': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution height as the latent.'}),
+            'chat_mode': (['Conversation','Prompt workshop'], {'default':'Conversation','tooltip':'Conversation discusses ideas without automatically writing prompts. Prompt workshop generates the selected output format.'}),
+            'style_preset': (STYLE_OPTIONS, {'default':'None (model choice)','tooltip':'Same visual styles as Archmage. Applied only in Prompt workshop; explicit scene instructions take priority.'}),
+            'style_notes': ('STRING', {'default':'','multiline':True,'tooltip':'Optional custom style directions for Prompt workshop.'}),
+            'edit_original': ('STRING', {'default':'','tooltip':'Managed by chat message edits; rejects stale changes.'}),
+            'edit_index': ('INT', {'default':-1,'min':-1,'max':100000,'tooltip':'Managed by message actions. Edits branch from this user turn, replacing later turns only after success.'}),
         }}
 
     def chat(self, conversation_id, system_prompt='', task_instructions='', pinned_facts='', message='', action='Use latest',
              assistant_backend='Local Qwen', openai_model=DEFAULT_MODEL, deepseek_model=DS_DEFAULT, local_model='Automatic',
              thinking=False, max_tokens=4096, auto_compact=True, summary_override='', output_selection='Latest response',
-             json_field='prompt', unload_after_generation=False, clip=None, image=None, appearance=None, width=1024, height=1024):
+             json_field='prompt', unload_after_generation=False, clip=None, image=None, appearance=None, width=1024, height=1024, chat_mode='Conversation', style_preset='None (model choice)', style_notes='', edit_index=-1, edit_original=''):
         from comfy_execution.graph import ExecutionBlocker
-        for value in (system_prompt, task_instructions, pinned_facts, message, summary_override):
+        for value in (system_prompt, task_instructions, pinned_facts, message, summary_override, style_notes):
             if len(value) > 32768:
                 raise ValueError('Each Grimoire text field is limited to 32,768 characters.')
-        if action not in ('Send','Next step','Regenerate','Compact now','Clear conversation','Use latest'):
+        if action not in ('Send','Next step','Regenerate','Compact now','Clear conversation','Use latest','Edit message'):
             raise ValueError('Choose a supported conversation action.')
         with LOCK:
             path = memory_path(conversation_id)
@@ -83,6 +90,7 @@ class PromptMageGrimoire(BaseNode):
                 raise ValueError('Choose a supported assistant backend.')
             replacements, _ = override_instructions(appearance)
             system = system_prompt + '\nTASK INSTRUCTIONS:\n' + task_instructions + '\nPINNED FACTS:\n' + pinned_facts + '\nCURRENT APPEARANCE RECIPE:\n' + replacements + f'\nCurrent canvas: {width} x {height} pixels. Use these dimensions for spatial planning.'
+            system += '\n' + response_contract(chat_mode, output_selection, width, height, style_preset, style_notes)
             report = dict(status='ok', compacted=False, backend=assistant_backend)
             def generate(prompt, instructions=system, limit=max_tokens, reference=None):
                 args = dict(prompt=prompt, system_prompt=instructions, max_length=limit, thinking=thinking, sampling_mode={'sampling_mode':'off'}, mtp='off')
@@ -93,9 +101,14 @@ class PromptMageGrimoire(BaseNode):
                 if not text.strip():
                     raise ValueError('No final answer returned. Increase tokens or disable Thinking.')
                 return text
-            with offload_after(encoder, unload_after_generation, release_on_error=True):
+            with offload_after(encoder, unload_after_generation, release_on_error=False):
                 turns = state['turns']
-                if action == 'Regenerate':
+                if action == 'Edit message':
+                    if isinstance(edit_index, bool) or not isinstance(edit_index, int) or not 0 <= edit_index < len(turns) or turns[edit_index]['role'] != 'user' or turns[edit_index]['content'] != edit_original:
+                        raise ValueError('User message changed. Refresh history before editing or resending.')
+                    state['turns'] = turns = turns[:edit_index]
+                    current = message.strip()
+                elif action == 'Regenerate':
                     if len(turns) < 2 or turns[-1]['role'] != 'assistant' or turns[-2]['role'] != 'user':
                         raise ValueError('There is no completed answer to regenerate.')
                     turns.pop()
@@ -126,20 +139,18 @@ class PromptMageGrimoire(BaseNode):
                 latest = generate('Conversation data follows as JSON. Answer the current user message; use prior turns/summary as context.\n' + json.dumps(history, ensure_ascii=False), reference=reference)
                 state['turns'].extend([dict(role='user',content=current),dict(role='assistant',content=latest)])
                 try:
-                    if output_selection == 'MOSS JSON layout':
-                        raw = select_output(latest, 'JSON only', '')
-                        output = json.dumps(read_layout(raw, width, height), ensure_ascii=False, indent=2)
-                    else:
-                        output = select_output(latest, output_selection, json_field)
+                    output = extract_response(latest, chat_mode, output_selection, json_field, width, height)
                 except (ValueError, TypeError) as error:
                     output = None
                     report.update(status='blocked', note='Answer saved, but output extraction failed: ' + str(error))
+                state['turns'][-1].update(mode='Latest response' if chat_mode == 'Conversation' else output_selection, valid=output is not None, width=width, height=height, field=json_field)
                 if isinstance(encoder, OpenAIEncoder):
                     report['api_calls'] = encoder.calls
                 state['settings'] = dict(system_prompt=system_prompt, task_instructions=task_instructions,
                     pinned_facts=pinned_facts, assistant_backend=assistant_backend, openai_model=openai_model,
                     deepseek_model=deepseek_model, local_model=local_model, thinking=thinking, max_tokens=max_tokens,
-                    auto_compact=auto_compact, output_selection=output_selection, json_field=json_field)
+                    auto_compact=auto_compact, output_selection=output_selection, json_field=json_field,
+                    chat_mode=chat_mode, style_preset=style_preset, style_notes=style_notes)
                 save_memory(path, state)
                 return self.result(state, latest, output, report, ExecutionBlocker)
 

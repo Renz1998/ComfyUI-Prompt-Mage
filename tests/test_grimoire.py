@@ -62,7 +62,7 @@ class GrimoireTests(unittest.TestCase):
         self.assertEqual(memory_path('chapter-1234').read_bytes(),before)
 
     def test_output_selection_blocks_bad_json_but_retains_answer(self):
-        result,_=self.call(message='JSON please',output_selection='JSON only')
+        result,_=self.call(message='JSON please',output_selection='JSON only',chat_mode='Prompt workshop')
         self.assertIsInstance(result['result'][0],Blocker)
         self.assertEqual(result['result'][1],'A red mug.')
         self.assertEqual(select_output('```json\n{"summary":{"caption":"Mug"}}\n```','JSON field','summary.caption'),'Mug')
@@ -99,5 +99,56 @@ class GrimoireTests(unittest.TestCase):
 
     def test_moss_validation_blocks_out_of_bounds_boxes(self):
         layout=dict(summary={'caption':'Mug','meta':[],'canvas':'single'},items=[dict(label='object',caption='Mug',bbox=[-999,-100,100,100])],bbox_coord_space='abs_centralized',bbox_format='yxyx')
-        result,_=self.call(replies=(json.dumps(layout),),message='Layout',output_selection='MOSS JSON layout')
+        result,_=self.call(replies=(json.dumps(layout),),message='Layout',output_selection='MOSS JSON layout',chat_mode='Prompt workshop')
         self.assertIsInstance(result['result'][0],Blocker)
+
+    def test_conversation_does_not_force_json_or_retry(self):
+        value,execute=self.call(message='Discuss composition',output_selection='MOSS JSON layout')
+        self.assertEqual(execute.call_count,1)
+        self.assertIn('CURRENT MODE: Conversation',execute.call_args.kwargs['system_prompt'])
+        self.assertNotIn('MANDATORY OUTPUT FORMAT',execute.call_args.kwargs['system_prompt'])
+        self.assertEqual(value['result'][0],'A red mug.')
+
+    def test_workshop_supplies_native_moss_contract_and_style(self):
+        layout=dict(summary=dict(meta=['photo'],canvas='single',caption='A red mug on a table.'),items=[dict(label='object',caption='Red mug',bbox=[-200,-200,200,200])],bbox_coord_space='abs_centralized',bbox_format='yxyx')
+        value,execute=self.call(replies=(json.dumps(layout),),message='Mug',chat_mode='Prompt workshop',output_selection='MOSS JSON layout',width=1728,height=2144,style_preset='Photo · Bright lifestyle')
+        prompt=execute.call_args.kwargs['system_prompt']
+        self.assertIn('ABSOLUTE CENTERED PIXELS',prompt)
+        self.assertIn('1728 x 2144',prompt)
+        self.assertIn('Bright lifestyle',prompt)
+        self.assertEqual(json.loads(value['result'][0]),layout)
+        self.assertTrue(read_memory(memory_path('chapter-1234'))['turns'][-1]['valid'])
+
+    def test_generic_scene_json_is_not_a_moss_layout(self):
+        value,execute=self.call(replies=('{"subject":"Mug","scene_description":"Table"}',),message='Mug',chat_mode='Prompt workshop',output_selection='MOSS JSON layout')
+        self.assertIsInstance(value['result'][0],Blocker)
+        self.assertEqual(execute.call_count,1)
+        self.assertFalse(read_memory(memory_path('chapter-1234'))['turns'][-1]['valid'])
+
+    def test_edit_branches_only_after_success_and_checks_original(self):
+        self.call(message='First')
+        self.call(message='Second')
+        self.call(replies=('New first answer',),message='Edited first',action='Edit message',edit_index=0,edit_original='First')
+        state=read_memory(memory_path('chapter-1234'))
+        self.assertEqual([t['content'] for t in state['turns']],['Edited first','New first answer'])
+        with self.assertRaisesRegex(ValueError,'changed'):
+            self.call(action='Edit message',message='Stale',edit_index=0,edit_original='First')
+        self.assertEqual(read_memory(memory_path('chapter-1234')),state)
+
+    def test_manual_assistant_edit_validates_without_generation(self):
+        from dart_plugin.py.dart.grimoire import edit_assistant
+        self.call(message='First')
+        self.call(message='Second')
+        value=edit_assistant('chapter-1234',1,'A red mug.','A blue mug.')
+        self.assertEqual(len(value['turns']),2)
+        self.assertEqual(value['turns'][1]['content'],'A blue mug.')
+        with self.assertRaisesRegex(ValueError,'changed'):
+            edit_assistant('chapter-1234',1,'A red mug.','A green mug.')
+
+    def test_butt_size_recipe_and_custom(self):
+        node=plugin.NODE_CLASS_MAPPINGS['DanbooruTagsTransformerAppearanceOverrides']()
+        appearance=node.build(butt_size='Large butt')['result'][0]
+        self.assertEqual(appearance['traits']['butt_size'],'Large butt')
+        _,execute=self.call(message='Scene',appearance=appearance)
+        self.assertIn('Large butt',execute.call_args.kwargs['system_prompt'])
+        self.assertEqual(node.build(butt_size='Custom',butt_size_custom='Rounded hips')['result'][0]['traits']['butt_size'],'Rounded hips')

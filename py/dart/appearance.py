@@ -54,6 +54,7 @@ TRAITS = {
     "skin_tone": ["Fair", "Light", "Medium", "Tan", "Brown", "Dark"],
     "clothing": ["Casual clothes", "Dress", "Suit", "Shirt and jeans", "Swimwear", "Lingerie"],
     "expression": ["Neutral", "Smiling", "Serious", "Laughing", "Surprised", "Confident"],
+    "butt_size": ["Small butt", "Medium butt", "Large butt", "Very large butt", "Massive butt", "Gigantic butt"],
 }
 
 

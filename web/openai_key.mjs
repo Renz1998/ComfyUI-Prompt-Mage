@@ -26,7 +26,7 @@ export function installOpenAIKeyWidget(node, api, container=null) {
         {serialize:false,getMinHeight:height,getMaxHeight:height,hideOnZoom:true});
     if(container)container.append(root);
     widget.serialize=false;
-    const resize=()=>{form.hidden=!open;const size=node.computeSize();node.setSize([Math.max(500,node.size[0],size[0]),size[1]]);node.setDirtyCanvas(true,true);};
+    const resize=()=>{form.hidden=!open;if(container){node.setDirtyCanvas(true,true);return;}const size=node.computeSize();node.setSize([Math.max(500,node.size[0],size[0]),size[1]]);node.setDirtyCanvas(true,true);};
     const render=data=>{
         session=Boolean(data.session_configured || data.saved_configured);
         status.textContent=data.configured?(data.saved_configured?'✓ API key saved on this server':session?'✓ API key configured for this session':'✓ Using server environment key'):'API key not configured';

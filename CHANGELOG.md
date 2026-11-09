@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.19.0 — Grimoire conversation and prompt workshop
+
+- Adds Conversation / Prompt workshop modes, shared Archmage styles, and a native MOSS JSON response contract tied to the canvas. Invalid layouts stay inspectable and cannot be applied; no automatic repair call is charged.
+- Keeps the full workflow cache during chat with native partial execution; remote chats skip the local CLIP dependency. Unsupported servers fail before submission. Explicit unloading remains optional; native memory pressure can still evict models.
+- Adds per-message Copy, Edit, Resend and Retry. User edits branch transactionally; manual response edits validate and save without a model call. Applied Spell Scroll snapshots remain independent.
+- Renders bare JSON as copyable code and expands safe Markdown with real lists, blockquotes and tables.
+- Persists resized Grimoire dimensions and named settings; embedded API-key panels no longer collapse the node.
+- Adds butt-size presets and Custom to Appearance Overrides, preserving existing widget positions.
+
+
 ## 1.18.1 — Restore Grimoire canvas sockets
 
 - Always expose width and height sockets on new and saved Grimoire nodes, independently of hidden settings widgets. Existing connections are preserved.

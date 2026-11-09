@@ -10,6 +10,22 @@
 
 Grimoire is a separate conversation node, not an Archmage replacement. [Complete Grimoire → MOSS workflow](../workflows/start-here/08-grimoire-to-moss.json) retains the main example's sampling, SLG, accelerator, appearance recipe and shared local Qwen. DART and Archmage are removed. The on-canvas guide includes setup and download links.
 
+## Conversation and Prompt workshop (1.19)
+
+The visible **Mode** selector above the messages controls what the next Send asks for:
+
+- **Conversation** (default): discuss ideas and ask questions in Markdown. Previous JSON replies do not force every new answer into JSON. You can still explicitly ask for a prompt in your message.
+- **Prompt workshop**: write one image prompt using **Settings → Prompt format**. Choose **MOSS JSON layout** for native MOSS input, **Natural language / Markdown** for prose, or a generic JSON format with your own task schema.
+- **Settings → Style / theme** shares Archmage’s photo, anime and illustration presets. Custom style notes are supported. Styles apply only in Prompt workshop.
+
+MOSS mode sends the actual model-facing schema: `summary` (`meta`, `canvas`, `caption`), `items` (`label`, `caption`, `bbox`, and `text` only for requested lettering), `bbox_coord_space: "abs_centralized"`, and `bbox_format: "yxyx"`. Boxes use centered pixel coordinates for the connected width/height. This follows the [official OpenMOSS guide](https://github.com/OpenMOSS/MOSS-Image/blob/main/USERGUIDE.md#layout-prompts-experimental). Generic subject/camera/lighting JSON is rejected. Invalid replies remain visible, with Apply disabled until corrected. There is no automatic paid repair call.
+
+**Message actions:** Copy and Edit appear below both kinds of messages, Resend below yours, and Retry below assistant replies. Sending an edited user message or retrying requests a new reply; later messages are replaced only after success. Editing an assistant reply saves your text without calling the model, validates its selected format, and removes later messages. Earlier-message edits warn first. These actions do not modify the applied Spell Scroll snapshot.
+
+Bare JSON is displayed as a formatted code block with Copy code. Safe Markdown includes headings, emphasis, lists, blockquotes, tables, links and fenced code. Raw HTML and remote images remain disabled. Resized dimensions and named settings are saved in workflow JSON; embedded key panels no longer reset the node height.
+
+**Model retention:** chat retains the full workflow cache and uses ComfyUI partial execution to run only Grimoire’s chat target and required inputs. API chats skip the optional local CLIP dependency. Both updated Prompt Mage backend and ComfyUI partial-execution support are required; unsupported servers fail before queuing. Keep Unload local assistant after generation off to retain that encoder. Native memory pressure, cache eviction, explicit server unload options, or another workflow can still offload models. This does not guarantee residency when a local LLM shares VRAM with diffusion models.
+
 ## Instructions and memory
 
 - **System prompt:** role and general rules; sent verbatim every turn.

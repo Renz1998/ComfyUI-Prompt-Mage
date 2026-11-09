@@ -79,7 +79,7 @@ export function installDesign(node, data) {
         root.dataset.open = String(open);
         button.setAttribute("aria-expanded", String(open));
         const size = node.computeSize();
-        node.setSize([Math.max(380, node.size[0], size[0]), size[1]]);
+        node.setSize([Math.max(380, node.size[0], size[0]), Math.max(node.size[1], size[1])]);
         node.setDirtyCanvas(true, true);
     });
     designs.set(node, { root, widget, profile, original });
@@ -97,7 +97,7 @@ export function installDesign(node, data) {
     };
     applyAppearance(node);
     const size = node.computeSize();
-    node.setSize([Math.max(380, node.size[0], size[0]), size[1]]);
+    node.setSize([Math.max(380, node.size[0], size[0]), Math.max(node.size[1], size[1])]);
 }
 
 export function configureDesign(node) {

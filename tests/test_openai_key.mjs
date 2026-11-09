@@ -38,7 +38,7 @@ console.log('Masked session-key UI clears/collapses after save and never stores 
 // Grimoire embeds provider controls inside Settings, without an extra node widget.
 const mount=new Element('section');
 const embedded={size:[650,850],widgets:[{name:'assistant_backend',value:'OpenAI API'}],
-    addDOMWidget(){throw Error('Embedded settings must not add a second node panel');},computeSize(){return this.size;},setSize(){},setDirtyCanvas(){}};
+    addDOMWidget(){throw Error('Embedded settings must not add a second node panel');},computeSize(){return [650,680];},setSize(){throw Error('Embedded key controls must preserve resized chat dimensions');},setDirtyCanvas(){}};
 installOpenAIKeyWidget(embedded,api,mount);
 await new Promise(resolve=>setTimeout(resolve,0));
 assert.equal(mount.children.length,1);

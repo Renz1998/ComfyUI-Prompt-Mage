@@ -15,6 +15,7 @@ class DanbooruTagsTransformerAppearanceOverrides(BaseNode):
             "identity_mode": (["Keep other appearance details", "Trigger replaces identity details"], {"tooltip": "Keep unselected traits, or use the trigger instead of describing unselected identity traits. The second option needs a trigger; selected replacements still appear."}),
         }
         for name, choices in TRAITS.items():
+            if name == "butt_size": continue  # Appended below for saved-widget compatibility.
             fields[name] = ([KEEP] + choices + ["Custom"], {"default": KEEP, "tooltip": f"Replace {name.replace('_', ' ')} for the selected subject. Keep unchanged makes no request. Custom reveals a free-text value."})
             fields[name + "_custom"] = ("STRING", {"default": "", "tooltip": f"Your own {name.replace('_', ' ')} value. Used only when its dropdown is Custom."})
         fields["custom_overrides"] = ("STRING", {"default": "", "multiline": True, "tooltip": "Extra appearance replacements, accessories, makeup, clothing or other directions. Selected dropdown traits win if they conflict. Existing assistant writing instructions remain available."})
@@ -23,6 +24,8 @@ class DanbooruTagsTransformerAppearanceOverrides(BaseNode):
         # Append to preserve positional settings in existing saved workflows.
         fields["gender"] = (["Female", "Male", "Nonbinary", KEEP, "Custom"], {"default": "Female", "tooltip": "Requested gender of the selected adult subject. Keep unchanged preserves the reference. Does not imply clothing, anatomy or pose."})
         fields["gender_custom"] = ("STRING", {"default": "", "tooltip": "Your gender wording when Gender is Custom."})
+        fields["butt_size"] = ([KEEP] + TRAITS["butt_size"] + ["Custom"], {"default": KEEP, "tooltip": "Requested butt size for the selected adult subject. Keep unchanged preserves existing appearance; Custom accepts your wording."})
+        fields["butt_size_custom"] = ("STRING", {"default": "", "tooltip": "Your own butt-size wording when Custom is selected."})
         return {"required": fields}
 
     RETURN_TYPES = ("ATELIER_APPEARANCE", "STRING")

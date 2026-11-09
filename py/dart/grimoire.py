@@ -44,6 +44,27 @@ def transcript(value):
     return '\n\n'.join(t['role'].upper() + ': ' + t['content'] for t in value['turns'])
 
 
+def edit_assistant(conversation_id, index, original, text):
+    """Manual response edits cost no model call; discard later turns explicitly in the UI."""
+    if not isinstance(text, str) or not text.strip() or len(text) > 65536:
+        raise ValueError('Enter a nonempty response under 65,536 characters.')
+    with LOCK:
+        path = memory_path(conversation_id)
+        state = read_memory(path)
+        if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < len(state['turns']):
+            raise ValueError('Message changed. Refresh history.')
+        turn = state['turns'][index]
+        if turn['role'] != 'assistant' or turn['content'] != original:
+            raise ValueError('Message changed. Refresh history before editing.')
+        from .grimoire_prompt import extract_response
+        mode = turn.get('mode', 'Latest response')
+        extract_response(text, 'Prompt workshop', mode, turn.get('field',state.get('settings',{}).get('json_field','prompt')), turn.get('width',1024), turn.get('height',1024))
+        state['turns'] = state['turns'][:index+1]
+        turn.update(content=text, valid=True)
+        save_memory(path,state)
+        return state
+
+
 def select_output(text, mode, section):
     if mode == 'Latest response':
         return text

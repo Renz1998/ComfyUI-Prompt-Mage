@@ -12,6 +12,27 @@ def register_grimoire_routes():
     if getattr(PromptServer, 'instance', None) is None:
         return False
 
+    @PromptServer.instance.routes.get('/prompt_mage/grimoire/capabilities')
+    async def capabilities(request):
+        import inspect
+        import execution
+        supported = 'partial_execution_list' in inspect.signature(execution.validate_prompt).parameters
+        return web.json_response({'partial_execution': supported}, headers={'Cache-Control':'no-store'})
+
+    @PromptServer.instance.routes.post('/prompt_mage/grimoire/message')
+    async def edit_message(request):
+        if not trusted_request(request):
+            return web.json_response({'error':'Use this ComfyUI page.'},status=403)
+        from .grimoire import edit_assistant
+        try:
+            if request.content_type != 'application/json' or not request.content_length or request.content_length > 262144:
+                raise ValueError('Invalid edit request size.')
+            data = await request.json()
+            value = edit_assistant(data['id'], data['index'], data['original'], data['text'])
+            return web.json_response(value, headers={'Cache-Control':'no-store'})
+        except (ValueError,KeyError,TypeError,OSError) as error:
+            return web.json_response({'error':str(error)},status=400)
+
     @PromptServer.instance.routes.get('/prompt_mage/grimoire/history')
     @PromptServer.instance.routes.post('/prompt_mage/grimoire/history')
     async def history(request):

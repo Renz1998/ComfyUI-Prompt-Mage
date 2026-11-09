@@ -26,7 +26,12 @@ def approve(scroll_id,conversation_id,index,text,mode,field):
         if not isinstance(index,int) or not 0<=index<len(state['turns']):raise ValueError('Response changed; refresh the conversation.')
         turn=state['turns'][index]
         if turn['role']!='assistant' or turn['content']!=text:raise ValueError('Response changed; refresh before selecting it.')
-        # Validate extraction now; full spatial validation is done by the reader's canvas.
+        if turn.get('valid') is False:
+            raise ValueError('Response failed prompt validation. Edit or retry it before applying.')
+        mode = turn.get('mode', mode)
+        field = turn.get('field', field)
+        if mode == 'MOSS JSON layout':
+            read_layout(select_output(text,'JSON only',''),turn.get('width',1024),turn.get('height',1024))
         select_output(text,'JSON only' if mode=='MOSS JSON layout' else mode,field)
         title=next((t['content'][:80] for t in state['turns'] if t['role']=='user'),'Conversation')
         value=dict(text=text,mode=mode,field=field,conversation_id=conversation_id,response_index=index,

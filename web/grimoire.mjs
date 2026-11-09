@@ -1,3 +1,4 @@
+import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.18.1';
 import { layoutGrimoire } from './grimoire_layout.mjs?v=1.18.0';
 import { chatPrompt } from './grimoire_queue.mjs?v=1.18.0';
 import { renderMarkdown } from './grimoire_markdown.mjs?v=1.16.0';
@@ -8,6 +9,7 @@ import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_k
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
+    ensureCanvasInputs(node);
     const chapterId=()=>{
         if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
         const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
@@ -73,8 +75,8 @@ export function installGrimoire(node) {
     composer.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();void run('Send');}});
     async function load() {
         const version=++requestVersion;
-        try {const response=await api.fetchApi('/prompt_mage/grimoire/history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:field('conversation_id').value})});if(!response.ok)throw Error();const value=await response.json();if(version===requestVersion){render(value);controls();}await listChats();}
-        catch{status.textContent='History unavailable · start/restart ComfyUI or check the chapter ID';}
+        try {const response=await api.fetchApi('/prompt_mage/grimoire/history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:field('conversation_id').value})});if(!response.ok){let error={};try{error=await response.json();}catch{}throw Error('HTTP '+response.status+': '+(error.error||'History endpoint unavailable; restart the updated backend.'));}const value=await response.json();if(version===requestVersion){render(value);controls();}await listChats();}
+        catch(error){status.textContent='History unavailable · '+(error.message||'Check the server connection.');}
     }
     async function run(action) {
         if(busy)return;
@@ -102,6 +104,7 @@ export function installGrimoire(node) {
     const chatWidget=node.widgets?.find(w=>w.name==='grimoire_chat');if(chatWidget)node.widgets=[chatWidget,...node.widgets.filter(w=>w!==chatWidget)];
     installOpenAIKeyWidget(node,api,layout.keyMount);installDeepSeekKeyWidget(node,api,layout.keyMount);
     function controls() {
+        ensureCanvasInputs(node);
         if(field('action'))field('action').value='Use latest';
         const backend=field('assistant_backend')?.value;
         for(const widget of node.widgets||[]){
@@ -124,7 +127,7 @@ export function installGrimoire(node) {
     const failed=()=>{busy=false;controls();status.textContent='Execution ended or failed. Review the ComfyUI error before retrying.';};
     api.addEventListener('execution_error',failed);api.addEventListener('execution_interrupted',failed);
     const removed=node.onRemoved;node.onRemoved=function(){api.removeEventListener('execution_error',failed);api.removeEventListener('execution_interrupted',failed);removed?.apply(this,arguments);};
-    const configured=node.onConfigure;node.onConfigure=function(){configured?.apply(this,arguments);for(const name of ['width','height'])if(this.addInput&&!this.inputs?.some(slot=>slot.name===name))this.addInput(name,'INT',{shape:7,tooltip:'Connect matching Resolution '+name+' for canvas context.'});if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
+    const configured=node.onConfigure;node.onConfigure=function(){configured?.apply(this,arguments);ensureCanvasInputs(this);if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
     controls();Promise.resolve().then(controls);void load();
 }
 

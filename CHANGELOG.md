@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.18.1 — Restore Grimoire canvas sockets
+
+- Always expose width and height sockets on new and saved Grimoire nodes, independently of hidden settings widgets. Existing connections are preserved.
+- History failures now show the actual HTTP error to help identify outdated server routes or connection problems.
+
 ## 1.18.0 — Separate conversation from applied prompts
 
 - Grimoire is chat-only; explicit chat requests use an internal executor. Normal workflow runs exclude the conversation node.

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {ensureCanvasInputs} from '../web/grimoire_sockets.mjs';
 import {layoutGrimoire} from '../web/grimoire_layout.mjs';
 import {chatPrompt} from '../web/grimoire_queue.mjs';
 import {renderMarkdown} from '../web/grimoire_markdown.mjs';
@@ -13,15 +14,15 @@ class Element {
 }
 let queued=0,copied='',imageJobs=0,job,applied=[];
 const snapshot={output:{7:{class_type:'DanbooruTagsTransformerGrimoire',inputs:{}},8:{class_type:'SaveImage',inputs:{images:['7',0]}}},workflow:{nodes:[]}};
-const context={layoutGrimoire,chatPrompt,renderMarkdown,document:{createElement:tag=>new Element(tag)},crypto:{getRandomValues:bytes=>bytes.fill(7)},
+const context={ensureCanvasInputs,layoutGrimoire,chatPrompt,renderMarkdown,document:{createElement:tag=>new Element(tag)},crypto:{getRandomValues:bytes=>bytes.fill(7)},
     navigator:{clipboard:{async writeText(value){copied=value;}}},window:{confirm:()=>true},
     app:{registerExtension(){},async graphToPrompt(){return snapshot;},async queuePrompt(){imageJobs++;}},api:{async queuePrompt(index,value){queued++;job=value;return {prompt_id:'test-job'};},async fetchApi(path,options){assert.equal(options.method,'POST');return {ok:true,async json(){if(path.endsWith('/scroll')){const body=JSON.parse(options.body);if(body.apply)applied.push(body);return {active:null};}if(path.endsWith('/chats'))return {chats:[{id:'older-chat',title:'An older chat',updated:1,turns:2}]};return JSON.parse(options.body).id==='older-chat'?{turns:[{role:'assistant',content:'Saved answer'}],summary:'Saved summary',settings:{task_instructions:'Restored task'}}:{turns:[],summary:''};}};},addEventListener(){},removeEventListener(){}},
     installOpenAIKeyWidget(){},refreshOpenAIKeyWidget(){},installDeepSeekKeyWidget(){},refreshDeepSeekKeyWidget(){}};
 vm.runInNewContext(readFileSync(new URL('../web/grimoire.mjs',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').replace('export function','function'),context);
 globalThis.document=context.document;
-const node={graph:{_nodes:[{type:'DanbooruTagsTransformerSpellScroll',widgets:[{name:'scroll_id',value:'main-scroll'}]}]},id:7,size:[650,900],widgets:['system_prompt','pinned_facts','task_instructions','message','conversation_id','action','assistant_backend','summary_override','openai_model','deepseek_model','local_model'].map(name=>({name,value:name==='assistant_backend'?'Local Qwen':'',options:name==='assistant_backend'?{values:['Local Qwen','OpenAI API','DeepSeek API']}:{}})),
+const node={inputs:[{name:'clip',link:23}],addInput(name,type,options){this.inputs.push({name,type,...options});},graph:{_nodes:[{type:'DanbooruTagsTransformerSpellScroll',widgets:[{name:'scroll_id',value:'main-scroll'}]}]},id:7,size:[650,900],widgets:['system_prompt','pinned_facts','task_instructions','message','conversation_id','action','assistant_backend','summary_override','openai_model','deepseek_model','local_model'].map(name=>({name,value:name==='assistant_backend'?'Local Qwen':'',options:name==='assistant_backend'?{values:['Local Qwen','OpenAI API','DeepSeek API']}:{}})),
     addDOMWidget(name,type,root,options){this.root=root;this.domOptions=options;this.chatWidget={serialize:options.serialize};return this.chatWidget;},computeSize(){return [650,680];},setSize(size){this.size=size;},setDirtyCanvas(){}};
-context.installGrimoire(node);
+context.installGrimoire(node);assert.deepEqual(node.inputs.map(s=>s.name),['clip','width','height']);node.inputs[1].hidden=true;node.inputs[1].widget={name:'width'};node.inputs[1].link=42;ensureCanvasInputs(node);assert.equal(node.inputs.length,3);assert.equal(node.inputs[1].hidden,false);assert.equal(node.inputs[1].widget,undefined);assert.equal(node.inputs[1].link,42);
 await new Promise(resolve=>setTimeout(resolve,0));
 assert.equal(node.widgets.find(w=>w.name==='conversation_id').value,'07070707070707070707070707070707');assert.equal(node.chatWidget.serialize,false);assert.equal(node.widgets.find(w=>w.name==='action').value,'Use latest');assert.equal(node.domOptions.getMinHeight(),560);assert.equal(node.domOptions.getMaxHeight,undefined);node.size=[800,1300];
 function all(root){return [root,...root.children.flatMap(all)];}

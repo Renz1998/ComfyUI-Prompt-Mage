@@ -43,16 +43,15 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
         if(isCombo)for(const value of widget.options.values){const label=name==='output_selection'?({'Latest response':'Natural language / Markdown','JSON only':'Generic JSON (task schema)','JSON field':'JSON (extract field)'}[value]||value):value;const o=make('option','',label);o.value=value;input.append(o);}
         else if(typeof widget.value==='boolean')input.type='checkbox';else if(!isText)input.type=typeof widget.value==='number'?'number':'text';
         function sync(){if(input.type==='checkbox')input.checked=widget.value;else if(input.value!==String(widget.value))input.value=widget.value;}
-        input.addEventListener('input',()=>{widget.value=input.type==='checkbox'?input.checked:input.type==='number'?Number(input.value):input.value;changed();});
-        input.addEventListener('change',()=>{widget.value=input.type==='checkbox'?input.checked:input.type==='number'?Number(input.value):input.value;changed();});
+        input.addEventListener('input',()=>{widget.value=input.type==='checkbox'?input.checked:input.type==='number'?Number(input.value):input.value;changed(name);});
+        input.addEventListener('change',()=>{widget.value=input.type==='checkbox'?input.checked:input.type==='number'?Number(input.value):input.value;changed(name);});
         row.append(input);if(help)row.append(make('small','',help));parent.append(row);bindings.push({name,row,sync});sync();
     }
     control(instructions,'system_prompt','System prompt','The assistant’s role and general rules. Always included.');
     control(instructions,'task_instructions','Task instructions','What you are working on, your sequence and requested output format.');
     control(instructions,'pinned_facts','Pinned facts','Important details to keep through compaction. Appearance Overrides also applies every turn.');
     const modeBar=make('div','gm-form gm-mode');
-    control(modeBar,'chat_mode','Mode','Conversation discusses ideas. Prompt workshop writes one prompt in your selected format. Each Send makes one reply; compaction may add a call.');
-    control(settings,'style_preset','Style / theme','Archmage visual presets, used only in Prompt workshop. Explicit scene instructions take priority.');
+    control(modeBar,'style_preset','Style / theme','Applies with your next message. Chat normally, or ask Grimoire to create or revise a prompt in this style.');
     control(settings,'style_notes','Custom style notes');
     control(settings,'assistant_backend','Assistant provider','Choose OpenAI or DeepSeek below to add an API key. Local Qwen needs no API key.');
     const keyMount=make('div');settings.append(keyMount);
@@ -73,7 +72,7 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     root.replaceChildren();root.append(style,header,chatbar,tabs,status,...(targets?[targets,active]:[]),chatPage,instructions,settings);tab('Chat');
     return {keyMount,tab,setEditing(editing){cancelEdit.hidden=!editing;send.textContent=editing?'Send edited message':'Send';},sync(backend,busy,hasAnswer){
         provider.textContent=backend+' · Settings';send.disabled=busy;
-        for(const b of bindings){b.sync();b.row.hidden=['output_selection','style_preset','style_notes'].includes(b.name)?field('chat_mode')?.value==='Conversation':b.name==='openai_model'?backend!=='OpenAI API':b.name==='deepseek_model'?backend!=='DeepSeek API':b.name==='local_model'?backend!=='Local Qwen':b.name==='json_field'?field('output_selection')?.value!=='JSON field':false;}
+        for(const b of bindings){b.sync();b.row.hidden=b.name==='openai_model'?backend!=='OpenAI API':b.name==='deepseek_model'?backend!=='DeepSeek API':b.name==='local_model'?backend!=='Local Qwen':b.name==='json_field'?field('output_selection')?.value!=='JSON field':false;}
         keyHint.hidden=backend!=='Local Qwen';memory.hidden=!summary.value;
     }};
 }

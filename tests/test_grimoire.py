@@ -152,3 +152,23 @@ class GrimoireTests(unittest.TestCase):
         _,execute=self.call(message='Scene',appearance=appearance)
         self.assertIn('Large butt',execute.call_args.kwargs['system_prompt'])
         self.assertEqual(node.build(butt_size='Custom',butt_size_custom='Rounded hips')['result'][0]['traits']['butt_size'],'Rounded hips')
+
+    def test_conversational_style_is_live_without_forcing_a_prompt(self):
+        value,execute=self.call(message='What lighting works indoors?',output_selection='MOSS JSON layout',style_preset='Photo · Bright lifestyle')
+        self.assertEqual(value['result'][0],'A red mug.')
+        self.assertEqual(execute.call_count,1)
+        system=execute.call_args.kwargs['system_prompt']
+        self.assertIn('CURRENT VISUAL STYLE: Photo · Bright lifestyle',system)
+        self.assertIn('only when a prompt is requested',system)
+        _,execute=self.call(message='Now revise the scene',output_selection='MOSS JSON layout',style_preset='Photo · Direct flash')
+        self.assertIn('STYLE SETTING CHANGED',execute.call_args.kwargs['system_prompt'])
+        self.assertIn('Current selection: Photo · Direct flash',execute.call_args.kwargs['system_prompt'])
+
+    def test_conversation_validates_json_prompt_and_records_its_format(self):
+        layout=dict(summary=dict(meta=['photo'],canvas='single',caption='A red mug on a table.'),items=[dict(label='object',caption='Red mug',bbox=[-200,-200,200,200])],bbox_coord_space='abs_centralized',bbox_format='yxyx')
+        value,execute=self.call(replies=(json.dumps(layout),),message='Write the prompt',output_selection='MOSS JSON layout')
+        self.assertEqual(json.loads(value['result'][0]),layout)
+        self.assertEqual(read_memory(memory_path('chapter-1234'))['turns'][-1]['mode'],'MOSS JSON layout')
+        value,execute=self.call(replies=('{"subject":"mug"}',),message='Revise the prompt',output_selection='MOSS JSON layout')
+        self.assertIsInstance(value['result'][0],Blocker)
+        self.assertEqual(execute.call_count,1)

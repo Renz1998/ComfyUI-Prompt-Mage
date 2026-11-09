@@ -10,15 +10,15 @@
 
 Grimoire is a separate conversation node, not an Archmage replacement. [Complete Grimoire → MOSS workflow](../workflows/start-here/08-grimoire-to-moss.json) retains the main example's sampling, SLG, accelerator, appearance recipe and shared local Qwen. DART and Archmage are removed. The on-canvas guide includes setup and download links.
 
-## Conversation and Prompt workshop (1.19)
+## Conversational chat with live style (1.19.1)
 
-The visible **Mode** selector above the messages controls what the next Send asks for:
+Grimoire stays conversational. The **Style / theme** dropdown sits above the messages; changing it makes no request and spends no API credits. The next message includes that selection and any custom style notes. A changed selection is explicitly identified in the next model request, so old conversation styles do not silently take precedence.
 
-- **Conversation** (default): discuss ideas and ask questions in Markdown. Previous JSON replies do not force every new answer into JSON. You can still explicitly ask for a prompt in your message.
-- **Prompt workshop**: write one image prompt using **Settings → Prompt format**. Choose **MOSS JSON layout** for native MOSS input, **Natural language / Markdown** for prose, or a generic JSON format with your own task schema.
-- **Settings → Style / theme** shares Archmage’s photo, anime and illustration presets. Custom style notes are supported. Styles apply only in Prompt workshop.
+Ask questions, discuss ideas, then say “write the prompt,” “revise it in this style,” or “next scene” when ready. Grimoire is instructed to use the selected style for prompt creation/revision while keeping ordinary discussion in Markdown. Changing the dropdown alone does not rewrite a reply or the applied Spell Scroll snapshot.
 
-MOSS mode sends the actual model-facing schema: `summary` (`meta`, `canvas`, `caption`), `items` (`label`, `caption`, `bbox`, and `text` only for requested lettering), `bbox_coord_space: "abs_centralized"`, and `bbox_format: "yxyx"`. Boxes use centered pixel coordinates for the connected width/height. This follows the [official OpenMOSS guide](https://github.com/OpenMOSS/MOSS-Image/blob/main/USERGUIDE.md#layout-prompts-experimental). Generic subject/camera/lighting JSON is rejected. Invalid replies remain visible, with Apply disabled until corrected. There is no automatic paid repair call.
+**Settings → Prompt format** controls the format when a prompt is requested. Choose **MOSS JSON layout** for native MOSS, **Natural language / Markdown** for prose, or generic JSON with your own task schema. Custom style notes remain in Settings. The old mode widget is retained internally for workflow compatibility; the chat UI uses Conversation.
+
+MOSS mode sends the actual model-facing schema: `summary` (`meta`, `canvas`, `caption`), `items` (`label`, `caption`, `bbox`, and `text` only for requested lettering), `bbox_coord_space: "abs_centralized"`, and `bbox_format: "yxyx"`. Boxes use centered pixel coordinates for the connected width/height. This follows the [official OpenMOSS guide](https://github.com/OpenMOSS/MOSS-Image/blob/main/USERGUIDE.md#layout-prompts-experimental). Generic subject/camera/lighting JSON is rejected. Whole JSON replies are checked against the selected format. Invalid replies remain visible, with Apply disabled until corrected. There is no automatic paid repair call.
 
 **Message actions:** Copy and Edit appear below both kinds of messages, Resend below yours, and Retry below assistant replies. Sending an edited user message or retrying requests a new reply; later messages are replaced only after success. Editing an assistant reply saves your text without calling the model, validates its selected format, and removes later messages. Earlier-message edits warn first. These actions do not modify the applied Spell Scroll snapshot.
 

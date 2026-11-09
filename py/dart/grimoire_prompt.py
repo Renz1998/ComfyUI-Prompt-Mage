@@ -7,17 +7,21 @@ from .style_presets import resolve_style
 
 
 def response_contract(mode, output, width, height, style, notes):
-    if mode == 'Conversation':
-        return ('CURRENT MODE: Conversation. Answer the current question naturally, using readable Markdown. '
-                'Discuss and plan without emitting an image prompt or JSON unless the current message explicitly asks for one. '
-                'Earlier JSON replies are context, not a requirement to keep producing JSON. '
-                'The appearance recipe is reference information; do not list it on every reply.')
-    if mode != 'Prompt workshop':
-        raise ValueError('Choose Conversation or Prompt workshop.')
+    if mode not in ('Conversation', 'Prompt workshop'):
+        raise ValueError('Choose a supported conversation mode.')
     _, guidance = resolve_style(style, notes, randbits(64))
-    contract = ('CURRENT MODE: Prompt workshop. Produce one image prompt for the current requested scene, '
-                'using the agreed task and character. Describe observable details and physical spatial relationships. '
-                'Do not invent unrequested identity details.\n' + guidance)
+    conversational = mode == 'Conversation'
+    contract = (('CURRENT MODE: Conversation. Answer the current question naturally, using readable Markdown. '
+                 'Discuss and plan without emitting an image prompt or JSON unless the current message asks to create, '
+                 'continue or revise a prompt. Earlier JSON replies do not require more JSON. '
+                 'The appearance recipe is reference information; do not list it on every reply. '
+                 'When the user asks for a prompt, use the prompt-format rules below. '
+                 'These rules apply to prompt responses only, not ordinary discussion.\n') if conversational else
+                'CURRENT MODE: Prompt workshop. Produce one image prompt for the requested scene.\n')
+    contract += ('CURRENT VISUAL STYLE: ' + style + '. This live selection supersedes previous style selections in history. '
+                 'Use it for the next requested prompt or revision, while preserving the requested scene and character. '
+                 'Do not regenerate a prompt just because the style changed. Explicit user scene directions take priority.\n' + guidance)
+    contract += '\nBEGIN PROMPT RESPONSE RULES (only when a prompt is requested):\n'
     if output == 'MOSS JSON layout':
         canvas_size(width, height)
         example = dict(summary=dict(meta=['requested medium'], canvas='single', caption='Overall scene description'),
@@ -25,7 +29,7 @@ def response_contract(mode, output, width, height, style, notes):
                                    bbox=[-height//4, -width//4, height//4, width//4])],
                        bbox_coord_space='abs_centralized', bbox_format='yxyx')
         contract += f'''
-MANDATORY OUTPUT FORMAT: MOSS-Image native layout JSON, not a generic scene JSON.
+PROMPT OUTPUT FORMAT: MOSS-Image native layout JSON, not a generic scene JSON.
 Return exactly one JSON object, no Markdown fences or commentary. Exact structure:
 {json.dumps(example)}
 Replace placeholders with detailed, coherent descriptions of the requested scene.
@@ -45,12 +49,24 @@ Preserve explicit focus/no-blur instructions and chosen style. Describe actual t
         contract += '\nReturn valid JSON only, following the schema supplied in Task instructions.'
     else:
         contract += '\nReturn the image description in readable natural language. Markdown sections are allowed.'
+    contract += '\nEND PROMPT RESPONSE RULES.\n'
+    if conversational:
+        contract += 'For ordinary questions, answer conversationally in Markdown; do not output a scene or JSON unasked.'
     return contract
 
 
+def response_output_mode(text, mode, output):
+    if mode != 'Conversation':
+        return output
+    # Ordinary chat stays ordinary text. Whole JSON responses use the selected prompt validator.
+    value = text.lstrip()
+    if output != 'Latest response' and value.startswith(('{', '[', '```json', '```\n{', '```\n[')):
+        return output
+    return 'Latest response'
+
+
 def extract_response(text, mode, output, section, width, height):
-    if mode == 'Conversation':
-        return text
+    output = response_output_mode(text, mode, output)
     if output == 'MOSS JSON layout':
         return json.dumps(read_layout(select_output(text, 'JSON only', ''), width, height), ensure_ascii=False, indent=2)
     return select_output(text, output, section)

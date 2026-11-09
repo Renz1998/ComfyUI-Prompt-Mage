@@ -1,11 +1,11 @@
-import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.19.0';
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.19.0';
-import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.19.0';
-import { renderMarkdown } from './grimoire_markdown.mjs?v=1.19.0';
+import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.19.1';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.19.1';
+import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.19.1';
+import { renderMarkdown } from './grimoire_markdown.mjs?v=1.19.1';
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.19.0';
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.19.0';
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.19.1';
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.19.1';
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
@@ -124,7 +124,7 @@ export function installGrimoire(node) {
     button('Copy latest',async()=>{try{await navigator.clipboard.writeText(latest);status.textContent='Latest response copied';}catch{status.textContent='Clipboard unavailable · select and copy the response';}});
     button('Edit summary',()=>{field('summary_override').value=summary.value;status.textContent='Edit Summary override below; it is applied on the next successful run.';});
     button('Refresh chats',()=>void listChats());
-    layout=layoutGrimoire(root,{title,status,chats,history,summary,composer,actions,field,targets,active,changed:()=>controls()});
+    layout=layoutGrimoire(root,{title,status,chats,history,summary,composer,actions,field,targets,active,changed:name=>{controls();if(['style_preset','style_notes'].includes(name))status.textContent='Style updated · applies with your next message; no request sent.';}});
     // An unset maximum lets ComfyUI allocate extra node height to the chat.
     node.addDOMWidget('grimoire_chat','GRIMOIRE_CHAT',root,{serialize:false,getMinHeight:()=>560,hideOnZoom:true}).serialize=false;
     const chatWidget=node.widgets?.find(w=>w.name==='grimoire_chat');if(chatWidget)node.widgets=[chatWidget,...node.widgets.filter(w=>w!==chatWidget)];
@@ -132,6 +132,7 @@ export function installGrimoire(node) {
     function controls() {
         ensureCanvasInputs(node);
         if(field('action'))field('action').value='Use latest';
+        if(field('chat_mode'))field('chat_mode').value='Conversation';
         const backend=field('assistant_backend')?.value;
         for(const widget of node.widgets||[]){
             if(widget.name==='grimoire_chat')continue;

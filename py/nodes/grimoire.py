@@ -11,7 +11,7 @@ from ..dart.memory import offload_after
 from ..dart.text_output import final_text
 from ..dart.moss import read_layout
 from ..dart.style_presets import STYLE_OPTIONS
-from ..dart.grimoire_prompt import response_contract, extract_response
+from ..dart.grimoire_prompt import response_contract, extract_response, response_output_mode
 
 
 class PromptMageGrimoire(BaseNode):
@@ -52,9 +52,9 @@ class PromptMageGrimoire(BaseNode):
             'appearance': ('ATELIER_APPEARANCE', {'tooltip':'Current character recipe is included on every turn, separately from compacted history. Edits text, not image pixels.'}),
             'width': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution width as the latent.'}),
             'height': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution height as the latent.'}),
-            'chat_mode': (['Conversation','Prompt workshop'], {'default':'Conversation','tooltip':'Conversation discusses ideas without automatically writing prompts. Prompt workshop generates the selected output format.'}),
-            'style_preset': (STYLE_OPTIONS, {'default':'None (model choice)','tooltip':'Same visual styles as Archmage. Applied only in Prompt workshop; explicit scene instructions take priority.'}),
-            'style_notes': ('STRING', {'default':'','multiline':True,'tooltip':'Optional custom style directions for Prompt workshop.'}),
+            'chat_mode': (['Conversation','Prompt workshop'], {'default':'Conversation','tooltip':'Legacy mode retained for workflow compatibility. The chat interface uses conversational replies and follows the prompt format when a prompt is requested.'}),
+            'style_preset': (STYLE_OPTIONS, {'default':'None (model choice)','tooltip':'Same visual styles as Archmage. Included with your next message; applies when creating or revising prompts. Explicit scene instructions take priority.'}),
+            'style_notes': ('STRING', {'default':'','multiline':True,'tooltip':'Optional custom style directions included with your next message.'}),
             'edit_original': ('STRING', {'default':'','tooltip':'Managed by chat message edits; rejects stale changes.'}),
             'edit_index': ('INT', {'default':-1,'min':-1,'max':100000,'tooltip':'Managed by message actions. Edits branch from this user turn, replacing later turns only after success.'}),
         }}
@@ -91,6 +91,9 @@ class PromptMageGrimoire(BaseNode):
             replacements, _ = override_instructions(appearance)
             system = system_prompt + '\nTASK INSTRUCTIONS:\n' + task_instructions + '\nPINNED FACTS:\n' + pinned_facts + '\nCURRENT APPEARANCE RECIPE:\n' + replacements + f'\nCurrent canvas: {width} x {height} pixels. Use these dimensions for spatial planning.'
             system += '\n' + response_contract(chat_mode, output_selection, width, height, style_preset, style_notes)
+            previous = state.get('settings', {})
+            if previous and (previous.get('style_preset', 'None (model choice)') != style_preset or previous.get('style_notes', '') != style_notes):
+                system += '\nSTYLE SETTING CHANGED since the previous reply. Current selection: ' + style_preset + '. Use the current style for the next requested prompt/revision; keep normal discussion conversational.'
             report = dict(status='ok', compacted=False, backend=assistant_backend)
             def generate(prompt, instructions=system, limit=max_tokens, reference=None):
                 args = dict(prompt=prompt, system_prompt=instructions, max_length=limit, thinking=thinking, sampling_mode={'sampling_mode':'off'}, mtp='off')
@@ -143,7 +146,7 @@ class PromptMageGrimoire(BaseNode):
                 except (ValueError, TypeError) as error:
                     output = None
                     report.update(status='blocked', note='Answer saved, but output extraction failed: ' + str(error))
-                state['turns'][-1].update(mode='Latest response' if chat_mode == 'Conversation' else output_selection, valid=output is not None, width=width, height=height, field=json_field)
+                state['turns'][-1].update(mode=response_output_mode(latest, chat_mode, output_selection), valid=output is not None, width=width, height=height, field=json_field)
                 if isinstance(encoder, OpenAIEncoder):
                     report['api_calls'] = encoder.calls
                 state['settings'] = dict(system_prompt=system_prompt, task_instructions=task_instructions,

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.19.1 — Conversational Grimoire with live style
+
+- Replaces the visible mode selector with Style / theme above the chat. Style changes apply with the next message; changing the dropdown alone makes no model request.
+- Keeps ordinary replies conversational. Prompt-format instructions apply when creating, continuing or revising a prompt; whole JSON replies still receive format validation.
+- Explicitly reports changed style settings to the model on the next turn. Existing chat history and applied Spell Scroll snapshots stay intact.
+
+
 ## 1.19.0 — Grimoire conversation and prompt workshop
 
 - Adds Conversation / Prompt workshop modes, shared Archmage styles, and a native MOSS JSON response contract tied to the canvas. Invalid layouts stay inspectable and cannot be applied; no automatic repair call is charged.

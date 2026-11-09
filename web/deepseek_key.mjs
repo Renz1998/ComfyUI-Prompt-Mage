@@ -6,7 +6,7 @@ export function refreshDeepSeekKeyWidget(node) {
     panel.widget.hidden = panel.root.hidden = node.widgets?.find(w => w.name === 'assistant_backend')?.value !== 'DeepSeek API';
 }
 
-export function installDeepSeekKeyWidget(node, api) {
+export function installDeepSeekKeyWidget(node, api, container=null) {
     if (panels.has(node)) return;
     const root = document.createElement('section'); root.className = 'mage-api-key';
     const bar = document.createElement('div'); bar.className = 'mage-api-key-bar';
@@ -22,8 +22,9 @@ export function installDeepSeekKeyWidget(node, api) {
     bar.append(status,change); form.append(input,save,remove); root.append(bar,form,help);
     let open=true, busy=false, session=false;
     const height=()=>open?166:96;
-    const widget=node.addDOMWidget('mage_deepseek_key','MAGE_OPENAI_KEY',root,
+    const widget=container ? {serialize:false,hidden:false} : node.addDOMWidget('mage_deepseek_key','MAGE_DEEPSEEK_KEY',root,
         {serialize:false,getMinHeight:height,getMaxHeight:height,hideOnZoom:true});
+    if(container)container.append(root);
     widget.serialize=false;
     const resize=()=>{form.hidden=!open;const size=node.computeSize();node.setSize([Math.max(500,node.size[0],size[0]),size[1]]);node.setDirtyCanvas(true,true);};
     const render=data=>{

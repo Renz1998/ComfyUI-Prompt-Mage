@@ -1,5 +1,7 @@
 # Grimoire (Beta)
 
+**Interface (1.17):** Chat shows messenger-style bubbles and a fixed composer. **Instructions** holds System prompt, Task instructions and Pinned facts. **Settings → Assistant provider** selects Local Qwen, OpenAI or DeepSeek; selecting an API provider reveals its key input directly below. If a key is already saved, click Add / replace key. The header provider button is a shortcut to Settings. Secondary tools are in More actions, and compacted memory is tucked into Conversation memory only when present. Native widget fields remain serialized for workflow compatibility but are hidden from the interface.
+
 **RunPod/HTTP fix (1.15.1):** chapter creation now works without HTTPS-only `crypto.randomUUID`. History is shown in the conversation panel; **Refresh history** reloads the selected chapter. Update the server, restart ComfyUI when idle, and hard-refresh the browser to load the new UI.
 
 **Saved API keys:** keys added through either API panel now persist in `ComfyUI user directory/prompt_mage/credentials/openai.json` or `deepseek.json`. These are plaintext secrets with restricted file permissions; protect server/volume access. Keep the user directory on persistent RunPod storage to retain keys and conversation history between pod launches. Replacing a key overwrites only its provider's file; Remove saved key deletes only that file and clears its runtime credential. Environment keys are externally managed and can still apply after removing a saved key. No key values are returned to the UI or included in workflows/history.

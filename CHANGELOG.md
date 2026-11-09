@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.17.0 — Grimoire messenger layout
+
+- Replaces the button wall and native settings stack with Chat, Instructions and Settings tabs, left/right message bubbles and a fixed composer.
+- Keeps Send and Generate image primary; moves secondary tools into More actions and hides empty compacted memory.
+- Embeds provider-specific API-key controls directly below the Assistant provider selector, with explicit setup guidance. Saved chats, Markdown and queue isolation are retained.
+
 ## 1.16.0 — Chat composer and saved-chat picker
 
 - Grimoire now has a message composer, Enter/Shift+Enter, New chat and a persistent saved-chat picker with restored task/system/pinned settings.

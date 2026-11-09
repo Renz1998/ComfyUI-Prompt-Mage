@@ -1,9 +1,10 @@
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.17.0';
 import { chatPrompt } from './grimoire_queue.mjs?v=1.16.0';
 import { renderMarkdown } from './grimoire_markdown.mjs?v=1.16.0';
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.15.1';
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.15.1';
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.17.0';
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.17.0';
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
@@ -24,20 +25,21 @@ export function installGrimoire(node) {
     const chats=document.createElement('select');chats.setAttribute('aria-label','Saved chats');chats.style.cssText='width:100%;padding:8px;background:#18202d;color:#eee';
     const composer=document.createElement('textarea');composer.setAttribute('aria-label','Message Grimoire');composer.placeholder='Message Grimoire… Enter to send · Shift+Enter for a new line';composer.style.cssText='min-height:100px;width:100%;box-sizing:border-box;background:#101722;color:#eee;padding:12px;border:1px solid #b69962;border-radius:8px';
     const buttons=document.createElement('div');buttons.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
-    let latest='', busy=false, requestVersion=0, settingsOpen=false;
+    let latest='', busy=false, requestVersion=0, layout;const actions=new Map();
     function render(value) {
         history.replaceChildren();
         for(const turn of value.turns||[]) {
-            const item=document.createElement('div');item.style.cssText='padding:10px;margin-bottom:8px;border-left:3px solid '+(turn.role==='user'?'#74bec6':'#d4af66')+';background:#ffffff08';
-            const role=document.createElement('strong');role.textContent=turn.role==='user'?'YOU':'GRIMOIRE';item.append(role);
+            const item=document.createElement('div');item.className='gm-message '+(turn.role==='user'?'gm-user':'gm-assistant');
+            const role=document.createElement('small');role.className='gm-role';role.textContent=turn.role==='user'?'You':'Grimoire';item.append(role);
             renderMarkdown(item,turn.content,async text=>{try{await navigator.clipboard.writeText(text);status.textContent='Copied';}catch{status.textContent='Clipboard unavailable · select the text to copy';}});history.append(item);
         }
+        if(!(value.turns||[]).length){const empty=document.createElement('div');empty.className='gm-empty';empty.textContent='✦\nWhat would you like to create?\nStart a conversation, or open a saved chat above.';history.append(empty);}
         latest=[...(value.turns||[])].reverse().find(t=>t.role==='assistant')?.content||'';
         summary.value=value.summary||'';
         for(const [name,content] of Object.entries(value.settings||{}))if(field(name)&&name!=='conversation_id')field(name).value=content;
         status.textContent=value.report?.compacted?'Older turns compacted · inspect the summary':`${(value.turns||[]).length} saved messages`;
         if(value.report?.note)status.textContent+=' · '+value.report.note;
-        history.scrollTop=history.scrollHeight;
+        history.scrollTop=history.scrollHeight;controls();
     }
     async function listChats(){
         try{const r=await api.fetchApi('/prompt_mage/grimoire/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!r.ok)throw Error();const value=await r.json();
@@ -58,10 +60,12 @@ export function installGrimoire(node) {
         if(busy)return;
         if(action==='Clear conversation'&&!window.confirm('Clear this chapter’s saved history and summary? Configured instructions and pinned facts remain.'))return;
         if(action==='Send'&&!composer.value.trim()){status.textContent='Write a message first.';return;}
-        busy=true;status.textContent='Queueing '+action+'…';field('message').value=composer.value;
-        try{const snapshot=await app.graphToPrompt();const job=chatPrompt(snapshot,node.id,action,composer.value);const result=await api.queuePrompt(0,job);if(!result?.prompt_id||Object.keys(result.node_errors||{}).length)throw Error();} catch(error){busy=false;status.textContent='Could not queue: '+(error?.message||'Check ComfyUI status.');}
+        busy=true;controls();status.textContent='Queueing '+action+'…';field('message').value=composer.value;
+        try{const snapshot=await app.graphToPrompt();const job=chatPrompt(snapshot,node.id,action,composer.value);const result=await api.queuePrompt(0,job);if(!result?.prompt_id||Object.keys(result.node_errors||{}).length)throw Error();
+            status.textContent='Waiting for Grimoire…';
+            if(action==='Send'){const pending=document.createElement('div');pending.className='gm-message gm-user';pending.textContent=composer.value;history.append(pending);composer.value='';history.scrollTop=history.scrollHeight;}} catch(error){busy=false;controls();status.textContent='Could not queue: '+(error?.message||'Check ComfyUI status.');}
     }
-    function button(label, callback) {const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',callback);buttons.append(b);}
+    function button(label, callback) {actions.set(label,callback);const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',callback);buttons.append(b);}
     button('Send',()=>void run('Send'));
     button('Next step',()=>void run('Next step'));
     button('Regenerate',()=>void run('Regenerate'));
@@ -73,19 +77,19 @@ export function installGrimoire(node) {
     button('Edit summary',()=>{field('summary_override').value=summary.value;status.textContent='Edit Summary override below; it is applied on the next successful run.';});
     button('Generate image',async()=>{if(busy||!latest){status.textContent='Finish a chat response first.';return;}busy=true;field('action').value='Use latest';try{await app.queuePrompt(0,1);}catch{busy=false;status.textContent='Could not queue image workflow.';}});
     button('Refresh chats',()=>void listChats());
-    button('Instructions & model settings',()=>{settingsOpen=!settingsOpen;controls();});
-    root.append(title,notice,status,chats,history,summary,composer,buttons);
+    layout=layoutGrimoire(root,{title,status,chats,history,summary,composer,actions,field,changed:()=>controls()});
     node.addDOMWidget('grimoire_chat','GRIMOIRE_CHAT',root,{serialize:false,getMinHeight:()=>700,getMaxHeight:()=>700,hideOnZoom:true}).serialize=false;
     const chatWidget=node.widgets?.find(w=>w.name==='grimoire_chat');if(chatWidget)node.widgets=[chatWidget,...node.widgets.filter(w=>w!==chatWidget)];
-    installOpenAIKeyWidget(node,api);installDeepSeekKeyWidget(node,api);
+    installOpenAIKeyWidget(node,api,layout.keyMount);installDeepSeekKeyWidget(node,api,layout.keyMount);
     function controls() {
-        for(const name of ['message','action','conversation_id'])if(field(name))field(name).hidden=true;
         const backend=field('assistant_backend')?.value;
-        for(const name of ['openai_model'])if(field(name))field(name).hidden=backend!=='OpenAI API';
-        if(field('deepseek_model'))field('deepseek_model').hidden=backend!=='DeepSeek API';
-        if(field('local_model'))field('local_model').hidden=backend!=='Local Qwen';
-        if(!settingsOpen){for(const widget of node.widgets||[])if(!['grimoire_chat','mage_openai_key','mage_deepseek_key'].includes(widget.name))widget.hidden=true;}
-        else for(const widget of node.widgets||[])if(!['grimoire_chat','mage_openai_key','mage_deepseek_key','message','action','conversation_id','openai_model','deepseek_model','local_model'].includes(widget.name))widget.hidden=false;
+        for(const widget of node.widgets||[]){
+            if(widget.name==='grimoire_chat')continue;
+            widget.hidden=true;widget.computeSize=()=>[0,-4];
+            if(widget.element?.style)widget.element.style.display='none';
+            if(widget.inputEl?.style)widget.inputEl.style.display='none';
+        }
+        layout?.sync(backend,busy,Boolean(latest));
         refreshOpenAIKeyWidget(node);refreshDeepSeekKeyWidget(node);
         node.setSize([Math.max(650,node.size[0]),node.computeSize()[1]]);node.setDirtyCanvas(true,true);
     }
@@ -94,11 +98,11 @@ export function installGrimoire(node) {
     const idCallback=field('conversation_id').callback;
     field('conversation_id').callback=function(...args){idCallback?.apply(this,args);void load();};
     const executed=node.onExecuted;node.onExecuted=function(message){busy=false;executed?.apply(this,arguments);if(message.grimoire?.[0]){render(message.grimoire[0]);composer.value='';void listChats();}};
-    const failed=()=>{busy=false;status.textContent='Execution ended or failed. Review the ComfyUI error before retrying.';};
+    const failed=()=>{busy=false;controls();status.textContent='Execution ended or failed. Review the ComfyUI error before retrying.';};
     api.addEventListener('execution_error',failed);api.addEventListener('execution_interrupted',failed);
     const removed=node.onRemoved;node.onRemoved=function(){api.removeEventListener('execution_error',failed);api.removeEventListener('execution_interrupted',failed);removed?.apply(this,arguments);};
     const configured=node.onConfigure;node.onConfigure=function(){configured?.apply(this,arguments);if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
-    controls();void load();
+    controls();Promise.resolve().then(controls);void load();
 }
 
 app.registerExtension({name:'PromptMage.Grimoire',beforeRegisterNodeDef(type,data){

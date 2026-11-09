@@ -48,8 +48,8 @@ class PromptMageGrimoire(BaseNode):
             'clip': ('CLIP', {'tooltip':'Optional full native generation-capable encoder for Local Qwen.'}),
             'image': ('IMAGE', {'tooltip':'Current image reference. APIs receive the image; local Qwen captions it first. Only its text description is remembered; reattach images for detailed later inspection.'}),
             'appearance': ('ATELIER_APPEARANCE', {'tooltip':'Current character recipe is included on every turn, separately from compacted history. Edits text, not image pixels.'}),
-            'width': ('INT', {'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution width as the latent.'}),
-            'height': ('INT', {'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution height as the latent.'}),
+            'width': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution width as the latent.'}),
+            'height': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution height as the latent.'}),
         }}
 
     def chat(self, conversation_id, system_prompt='', task_instructions='', pinned_facts='', message='', action='Send',

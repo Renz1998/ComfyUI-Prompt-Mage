@@ -16,7 +16,7 @@ class Blocker:
 class GrimoireTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.modules = patch.dict(sys.modules, {'folder_paths':SimpleNamespace(get_user_directory=lambda:self.temp.name),
+        self.modules = patch.dict(sys.modules, {'folder_paths':SimpleNamespace(get_user_directory=lambda:self.temp.name,get_filename_list=lambda name:[]),
             'comfy_execution.graph':SimpleNamespace(ExecutionBlocker=Blocker)})
         self.modules.start()
         self.node = plugin.NODE_CLASS_MAPPINGS['DanbooruTagsTransformerGrimoire']()
@@ -66,6 +66,11 @@ class GrimoireTests(unittest.TestCase):
         self.assertEqual(result['result'][1],'A red mug.')
         self.assertEqual(select_output('```json\n{"summary":{"caption":"Mug"}}\n```','JSON field','summary.caption'),'Mug')
         with self.assertRaises(ValueError):memory_path('../not-safe')
+
+    def test_canvas_dimensions_are_permanent_sockets(self):
+        schema=self.node.INPUT_TYPES()['optional']
+        for name in ('width','height'):
+            self.assertTrue(schema[name][1]['forceInput'])
 
     def test_appearance_is_in_every_request(self):
         appearance=plugin.NODE_CLASS_MAPPINGS['DanbooruTagsTransformerAppearanceOverrides']().build(hair_color='Brown')['result'][0]

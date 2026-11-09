@@ -20,15 +20,15 @@ const context={layoutGrimoire,chatPrompt,renderMarkdown,document:{createElement:
 vm.runInNewContext(readFileSync(new URL('../web/grimoire.mjs',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').replace('export function','function'),context);
 globalThis.document=context.document;
 const node={id:7,size:[650,900],widgets:['system_prompt','pinned_facts','task_instructions','message','conversation_id','action','assistant_backend','summary_override','openai_model','deepseek_model','local_model'].map(name=>({name,value:name==='assistant_backend'?'Local Qwen':'',options:name==='assistant_backend'?{values:['Local Qwen','OpenAI API','DeepSeek API']}:{}})),
-    addDOMWidget(name,type,root,options){this.root=root;this.chatWidget={serialize:options.serialize};return this.chatWidget;},computeSize(){return this.size;},setSize(){},setDirtyCanvas(){}};
+    addDOMWidget(name,type,root,options){this.root=root;this.domOptions=options;this.chatWidget={serialize:options.serialize};return this.chatWidget;},computeSize(){return [650,680];},setSize(size){this.size=size;},setDirtyCanvas(){}};
 context.installGrimoire(node);
 await new Promise(resolve=>setTimeout(resolve,0));
-assert.equal(node.widgets.find(w=>w.name==='conversation_id').value,'07070707070707070707070707070707');assert.equal(node.chatWidget.serialize,false);
+assert.equal(node.widgets.find(w=>w.name==='conversation_id').value,'07070707070707070707070707070707');assert.equal(node.chatWidget.serialize,false);assert.equal(node.domOptions.getMinHeight(),560);assert.equal(node.domOptions.getMaxHeight,undefined);node.size=[800,1300];
 function all(root){return [root,...root.children.flatMap(all)];}
 const button=name=>all(node.root).find(e=>e.tag==='button'&&e.textContent===name);
 const composer=all(node.root).find(e=>e['aria-label']==='Message Grimoire');
 composer.value='Hello **Grimoire**';button('Send').listeners.click();await new Promise(resolve=>setTimeout(resolve,0));
-assert.equal(queued,1);assert.equal(imageJobs,0);assert.deepEqual(Object.keys(job.output),['7']);button('Send').listeners.click();assert.equal(queued,1);
+assert.deepEqual(Array.from(node.size),[800,1300]);assert.equal(queued,1);assert.equal(imageJobs,0);assert.deepEqual(Object.keys(job.output),['7']);button('Send').listeners.click();assert.equal(queued,1);
 node.onExecuted({grimoire:[{turns:[{role:'assistant',content:'<script>unsafe()</script>'}],summary:'Remember green cloak'}]});
 assert.ok(all(node.root).some(e=>e.textContent==='<script>unsafe()</script>'));assert.equal(all(node.root).some(e=>e.tag==='script'),false);
 const menu=all(node.root).find(e=>e['aria-label']==='Conversation actions');menu.value='Copy latest';await menu.listeners.change();assert.equal(copied,'<script>unsafe()</script>');
@@ -40,5 +40,6 @@ assert.ok(node.widgets.every(w=>w.hidden));
 const tree=new Element('div');renderMarkdown(tree,'# Title\n**Bold**\n```json\n{"x":1}\n```',value=>{copied=value;});assert.equal(tree.children[0].tag,'h1');tree.children[2].children[0].children[0].listeners.click();assert.equal(copied,'{"x":1}');
 assert.throws(()=>chatPrompt({output:{7:{class_type:'DanbooruTagsTransformerGrimoire',inputs:{image:['9',0]}},9:{class_type:'KSampler',inputs:{}}}},7,'Send','hello'),/image generation/);
 node.onExecuted({grimoire:[{turns:[],summary:''}]});const picker=all(node.root).find(e=>e['aria-label']==='Saved chats');picker.value='older-chat';picker.listeners.change();await new Promise(resolve=>setTimeout(resolve,0));assert.equal(node.widgets.find(w=>w.name==='conversation_id').value,'older-chat');assert.equal(node.widgets.find(w=>w.name==='task_instructions').value,'Restored task');
+assert.deepEqual(Array.from(node.size),[800,1300]);assert.equal(node.widgets[0].computeLayoutSize().maxHeight,0);
 node.onRemoved();
 console.log('Grimoire restores history, uses text-only DOM, prevents duplicate queued sends, copies output and exposes summary edits.');

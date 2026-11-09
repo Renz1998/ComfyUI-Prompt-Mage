@@ -1,4 +1,4 @@
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.17.0';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.17.1';
 import { chatPrompt } from './grimoire_queue.mjs?v=1.16.0';
 import { renderMarkdown } from './grimoire_markdown.mjs?v=1.16.0';
 import { app } from '../../scripts/app.js';
@@ -78,7 +78,8 @@ export function installGrimoire(node) {
     button('Generate image',async()=>{if(busy||!latest){status.textContent='Finish a chat response first.';return;}busy=true;field('action').value='Use latest';try{await app.queuePrompt(0,1);}catch{busy=false;status.textContent='Could not queue image workflow.';}});
     button('Refresh chats',()=>void listChats());
     layout=layoutGrimoire(root,{title,status,chats,history,summary,composer,actions,field,changed:()=>controls()});
-    node.addDOMWidget('grimoire_chat','GRIMOIRE_CHAT',root,{serialize:false,getMinHeight:()=>700,getMaxHeight:()=>700,hideOnZoom:true}).serialize=false;
+    // An unset maximum lets ComfyUI allocate extra node height to the chat.
+    node.addDOMWidget('grimoire_chat','GRIMOIRE_CHAT',root,{serialize:false,getMinHeight:()=>560,hideOnZoom:true}).serialize=false;
     const chatWidget=node.widgets?.find(w=>w.name==='grimoire_chat');if(chatWidget)node.widgets=[chatWidget,...node.widgets.filter(w=>w!==chatWidget)];
     installOpenAIKeyWidget(node,api,layout.keyMount);installDeepSeekKeyWidget(node,api,layout.keyMount);
     function controls() {
@@ -86,12 +87,14 @@ export function installGrimoire(node) {
         for(const widget of node.widgets||[]){
             if(widget.name==='grimoire_chat')continue;
             widget.hidden=true;widget.computeSize=()=>[0,-4];
+            widget.computeLayoutSize=()=>({minHeight:0,maxHeight:0,minWidth:0});
             if(widget.element?.style)widget.element.style.display='none';
             if(widget.inputEl?.style)widget.inputEl.style.display='none';
         }
         layout?.sync(backend,busy,Boolean(latest));
         refreshOpenAIKeyWidget(node);refreshDeepSeekKeyWidget(node);
-        node.setSize([Math.max(650,node.size[0]),node.computeSize()[1]]);node.setDirtyCanvas(true,true);
+        const minimum=node.computeSize();
+        node.setSize([Math.max(650,node.size[0],minimum[0]),Math.max(node.size[1],minimum[1])]);node.setDirtyCanvas(true,true);
     }
     const callback=field('assistant_backend').callback;
     field('assistant_backend').callback=function(...args){callback?.apply(this,args);controls();};
@@ -101,7 +104,7 @@ export function installGrimoire(node) {
     const failed=()=>{busy=false;controls();status.textContent='Execution ended or failed. Review the ComfyUI error before retrying.';};
     api.addEventListener('execution_error',failed);api.addEventListener('execution_interrupted',failed);
     const removed=node.onRemoved;node.onRemoved=function(){api.removeEventListener('execution_error',failed);api.removeEventListener('execution_interrupted',failed);removed?.apply(this,arguments);};
-    const configured=node.onConfigure;node.onConfigure=function(){configured?.apply(this,arguments);if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
+    const configured=node.onConfigure;node.onConfigure=function(){configured?.apply(this,arguments);for(const name of ['width','height'])if(this.addInput&&!this.inputs?.some(slot=>slot.name===name))this.addInput(name,'INT',{shape:7,tooltip:'Connect matching Resolution '+name+' for canvas context.'});if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
     controls();Promise.resolve().then(controls);void load();
 }
 

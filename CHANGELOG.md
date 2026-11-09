@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.17.1 — Resizable Grimoire chat and canvas sockets
+
+- Exposes permanent width/height input sockets, migrates existing nodes without shifting links, and suggests Resolution when dragging backward.
+- Removes the fixed 700-pixel chat widget cap, allowing the message area to fill resized nodes.
+- Preserves manually chosen node dimensions through new replies, history loads and provider changes. Composer and navigation keep their own space while history scrolls.
+
 ## 1.17.0 — Grimoire messenger layout
 
 - Replaces the button wall and native settings stack with Chat, Instructions and Settings tabs, left/right message bubbles and a fixed composer.

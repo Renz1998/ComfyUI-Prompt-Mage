@@ -1,7 +1,7 @@
 [project]
 name = "prompt-mage"
 description = "Prompt Mage turns words and photos into image prompts: Archmage with style presets and optional thinking, local vision captions, appearance overrides, DART expansion, and native MOSS JSON layouts."
-version = "1.19.1"
+version = "1.19.2"
 requires-python = ">=3.10"
 dependencies = ["transformers>=4.46,<6", "torch>=2.4", "huggingface-hub>=0.26"]
 license = { file = "LICENSE" }

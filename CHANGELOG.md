@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.19.2 — More room for Grimoire conversations
+
+- Combines the chat picker, New chat and Settings into one header row.
+- Keeps the style selector compact, with hover help instead of a permanent explanatory paragraph.
+- Moves Spell Scroll destination and active prompt into a collapsed Applied prompt section beside Style.
+- Hides idle message counts, retains status/error feedback, and reduces composer/footer padding without changing chat behavior or saved node dimensions.
+
+
 ## 1.19.1 — Conversational Grimoire with live style
 
 - Replaces the visible mode selector with Style / theme above the chat. Style changes apply with the next message; changing the dropdown alone makes no model request.

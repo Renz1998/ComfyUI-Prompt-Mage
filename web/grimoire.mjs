@@ -1,11 +1,11 @@
-import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.19.1';
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.19.1';
-import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.19.1';
-import { renderMarkdown } from './grimoire_markdown.mjs?v=1.19.1';
+import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.19.2';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.19.2';
+import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.19.2';
+import { renderMarkdown } from './grimoire_markdown.mjs?v=1.19.2';
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.19.1';
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.19.1';
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.19.2';
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.19.2';
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
@@ -30,7 +30,7 @@ export function installGrimoire(node) {
     const composer=document.createElement('textarea');composer.setAttribute('aria-label','Message Grimoire');composer.placeholder='Message Grimoire… Enter to send · Shift+Enter for a new line';composer.style.cssText='min-height:100px;width:100%;box-sizing:border-box;background:#101722;color:#eee;padding:12px;border:1px solid #b69962;border-radius:8px';
     const buttons=document.createElement('div');buttons.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
     const targets=document.createElement('select');targets.setAttribute('aria-label','Spell Scroll destination');
-    const active=document.createElement('details'),activeTitle=document.createElement('summary'),activePreview=document.createElement('pre');active.append(activeTitle,activePreview);activeTitle.textContent='Active prompt: none applied';activePreview.style.cssText='white-space:pre-wrap;max-height:160px;overflow:auto';
+    const active=document.createElement('div'),activeTitle=document.createElement('strong'),activePreview=document.createElement('pre');active.append(activeTitle,activePreview);activeTitle.textContent='Active prompt: none applied';activePreview.style.cssText='white-space:pre-wrap;max-height:160px;overflow:auto';
     node.properties ||= {};
     function destinations(){
         const readers=(node.graph?._nodes||app.graph?._nodes||[]).filter(n=>(n.comfyClass||n.type)==='DanbooruTagsTransformerSpellScroll');
@@ -82,8 +82,8 @@ export function installGrimoire(node) {
         latest=[...(value.turns||[])].reverse().find(t=>t.role==='assistant')?.content||'';
         summary.value=value.summary||'';
         for(const [name,content] of Object.entries(value.settings||{}))if(field(name)&&name!=='conversation_id')field(name).value=content;
-        status.textContent=value.report?.compacted?'Older turns compacted · inspect the summary':`${(value.turns||[]).length} saved messages`;
-        if(value.report?.note)status.textContent+=' · '+value.report.note;
+        status.textContent=value.report?.compacted?'Older turns compacted · inspect the summary':'';
+        if(value.report?.note)status.textContent+=(status.textContent?' · ':'')+value.report.note;
         history.scrollTop=history.scrollHeight;controls();
     }
     async function listChats(){

@@ -2,7 +2,7 @@
 
 **1.18 redesign:** Grimoire handles conversation only. Explicitly apply a selected reply to Spell Scroll; normal image workflow runs read that separate snapshot. [Setup and migration](SPELL_SCROLL.md).
 
-**Interface (1.17):** Chat shows messenger-style bubbles and a fixed composer. **Instructions** holds System prompt, Task instructions and Pinned facts. **Settings → Assistant provider** selects Local Qwen, OpenAI or DeepSeek; selecting an API provider reveals its key input directly below. If a key is already saved, click Add / replace key. The header provider button is a shortcut to Settings. Secondary tools are in More actions, and compacted memory is tucked into Conversation memory only when present. Native widget fields remain serialized for workflow compatibility but are hidden from the interface.
+**Interface (1.17):** Chat shows messenger-style bubbles and a fixed composer. **Instructions** holds System prompt, Task instructions and Pinned facts. **Settings → Assistant provider** selects Local Qwen, OpenAI or DeepSeek; selecting an API provider reveals its key input directly below. If a key is already saved, click Add / replace key. The compact header combines the chat picker, New chat and Settings; hover Settings to see the provider. Secondary tools are in More actions, and compacted memory is tucked into Conversation memory only when present. Native widget fields remain serialized for workflow compatibility but are hidden from the interface.
 
 **RunPod/HTTP fix (1.15.1):** chapter creation now works without HTTPS-only `crypto.randomUUID`. History is shown in the conversation panel; **Refresh history** reloads the selected chapter. Update the server, restart ComfyUI when idle, and hard-refresh the browser to load the new UI.
 
@@ -12,7 +12,7 @@ Grimoire is a separate conversation node, not an Archmage replacement. [Complete
 
 ## Conversational chat with live style (1.19.1)
 
-Grimoire stays conversational. The **Style / theme** dropdown sits above the messages; changing it makes no request and spends no API credits. The next message includes that selection and any custom style notes. A changed selection is explicitly identified in the next model request, so old conversation styles do not silently take precedence.
+Grimoire stays conversational. The **Style / theme** dropdown sits in a compact toolbar above the messages; changing it makes no request and spends no API credits. The next message includes that selection and any custom style notes. A changed selection is explicitly identified in the next model request, so old conversation styles do not silently take precedence.
 
 Ask questions, discuss ideas, then say “write the prompt,” “revise it in this style,” or “next scene” when ready. Grimoire is instructed to use the selected style for prompt creation/revision while keeping ordinary discussion in Markdown. Changing the dropdown alone does not rewrite a reply or the applied Spell Scroll snapshot.
 
@@ -25,6 +25,8 @@ MOSS mode sends the actual model-facing schema: `summary` (`meta`, `canvas`, `ca
 Bare JSON is displayed as a formatted code block with Copy code. Safe Markdown includes headings, emphasis, lists, blockquotes, tables, links and fenced code. Raw HTML and remote images remain disabled. Resized dimensions and named settings are saved in workflow JSON; embedded key panels no longer reset the node height.
 
 **Model retention:** chat retains the full workflow cache and uses ComfyUI partial execution to run only Grimoire’s chat target and required inputs. API chats skip the optional local CLIP dependency. Both updated Prompt Mage backend and ComfyUI partial-execution support are required; unsupported servers fail before queuing. Keep Unload local assistant after generation off to retain that encoder. Native memory pressure, cache eviction, explicit server unload options, or another workflow can still offload models. This does not guarantee residency when a local LLM shares VRAM with diffusion models.
+
+**Compact interface (1.19.2):** open **Applied prompt** beside Style to inspect the Spell Scroll destination and saved prompt. It starts collapsed. Style help and keyboard shortcuts are hover tips; idle message counts are hidden, while working/error feedback remains visible. The shorter composer and combined header leave more room for messages at the same node size.
 
 ## Instructions and memory
 

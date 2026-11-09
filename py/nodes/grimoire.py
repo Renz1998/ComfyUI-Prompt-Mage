@@ -32,7 +32,7 @@ class PromptMageGrimoire(BaseNode):
             'task_instructions': ('STRING', {'default':'', 'multiline':True, 'tooltip':'Current project, sequence, schema and constraints. Always included separately from history.'}),
             'pinned_facts': ('STRING', {'default':'', 'multiline':True, 'tooltip':'Explicit durable facts. Always sent verbatim. Nothing is silently learned or added here.'}),
             'message': ('STRING', {'default':'Describe an adult traveler reading a map in a lantern-lit inn.', 'multiline':True, 'tooltip':'Next message. Next step sends a continuation request. Regenerate replaces the last answer without adding a new user turn.'}),
-            'action': (['Send','Next step','Regenerate','Compact now','Clear conversation','Use latest'], {'default':'Send','tooltip':'Clear removes stored summary/history but keeps your configured system/task/pinned fields. Clear/compact do not run downstream generators.'}),
+            'action': (['Send','Next step','Regenerate','Compact now','Clear conversation','Use latest'], {'default':'Use latest','tooltip':'Run/Queue reuses the saved reply by default. Clear removes stored summary/history but keeps your configured system/task/pinned fields. Clear/compact do not run downstream generators.'}),
             'assistant_backend': (['Local Qwen','OpenAI API','DeepSeek API'], {'default':'Local Qwen','tooltip':'API modes send conversation text and supported image references to the selected provider. Charges apply.'}),
             'openai_model': (list(MODELS), {'default':DEFAULT_MODEL}),
             'deepseek_model': (list(DS_MODELS), {'default':DS_DEFAULT}),
@@ -52,7 +52,7 @@ class PromptMageGrimoire(BaseNode):
             'height': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution height as the latent.'}),
         }}
 
-    def chat(self, conversation_id, system_prompt='', task_instructions='', pinned_facts='', message='', action='Send',
+    def chat(self, conversation_id, system_prompt='', task_instructions='', pinned_facts='', message='', action='Use latest',
              assistant_backend='Local Qwen', openai_model=DEFAULT_MODEL, deepseek_model=DS_DEFAULT, local_model='Automatic',
              thinking=False, max_tokens=4096, auto_compact=True, summary_override='', output_selection='Latest response',
              json_field='prompt', unload_after_generation=False, clip=None, image=None, appearance=None, width=1024, height=1024):

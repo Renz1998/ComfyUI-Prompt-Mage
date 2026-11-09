@@ -1,4 +1,4 @@
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.17.1';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.17.2';
 import { chatPrompt } from './grimoire_queue.mjs?v=1.16.0';
 import { renderMarkdown } from './grimoire_markdown.mjs?v=1.16.0';
 import { app } from '../../scripts/app.js';
@@ -83,6 +83,7 @@ export function installGrimoire(node) {
     const chatWidget=node.widgets?.find(w=>w.name==='grimoire_chat');if(chatWidget)node.widgets=[chatWidget,...node.widgets.filter(w=>w!==chatWidget)];
     installOpenAIKeyWidget(node,api,layout.keyMount);installDeepSeekKeyWidget(node,api,layout.keyMount);
     function controls() {
+        if(field('action'))field('action').value='Use latest';
         const backend=field('assistant_backend')?.value;
         for(const widget of node.widgets||[]){
             if(widget.name==='grimoire_chat')continue;

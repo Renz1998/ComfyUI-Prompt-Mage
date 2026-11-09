@@ -54,9 +54,10 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     history.className='gm-history';history.style.cssText='';status.className='gm-status';
     const composerBox=make('div','gm-composer');composer.style.cssText='';composerBox.append(composer,make('small','','Enter to send · Shift+Enter for a new line'));
     const footer=make('div','gm-footer');const send=button('Send',invoke('Send'),'gm-primary'),generate=button('Generate image',invoke('Generate image'));
+    generate.title='Run image generation using the saved reply. Does not send another assistant request.';send.title='Send a new assistant request.';
     const more=make('select');more.setAttribute('aria-label','Conversation actions');
     const blank=make('option','','More actions…');blank.value='';more.append(blank);
-    for(const action of ['Next step','Regenerate','Copy latest','Refresh history','Refresh chats','Compact now','Clear conversation']){const option=make('option','',action);option.value=action;more.append(option);}
+    for(const action of ['Next step','Regenerate','Copy latest','Refresh history','Refresh chats','Compact now','Clear conversation']){const option=make('option','',action==='Next step'?'Ask for next scene (new request)':action==='Regenerate'?'Rewrite reply (new request)':action==='Compact now'?'Compact memory (new request)':action);option.value=action;more.append(option);}
     more.addEventListener('change',()=>{actions.get(more.value)?.();more.value='';});
     footer.append(send,generate,make('div','gm-spacer'),more);
     chatPage.append(history,memory,composerBox,footer);

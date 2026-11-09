@@ -20,7 +20,7 @@ Grimoire is a separate conversation node, not an Archmage replacement. [Complete
 
 ## Conversation controls
 
-**Send** uses the chat composer (Enter sends; Shift+Enter inserts a newline). It queues only Grimoire and upstream inputs through ComfyUI, leaving downstream samplers and image saving out. It may wait behind other queued work. If a reference depends on a sampler, chat refuses to queue it; use a loaded reference instead. **Generate image** runs the connected workflow with **Use latest**, reusing the stored response without another assistant call. The native global Run button still follows the node's selected action.
+**Send** uses the chat composer (Enter sends; Shift+Enter inserts a newline). It queues only Grimoire and upstream inputs through ComfyUI, leaving downstream samplers and image saving out. It may wait behind other queued work. If a reference depends on a sampler, chat refuses to queue it; use a loaded reference instead. **Generate image** runs the connected workflow with **Use latest**, reusing the stored response without another assistant call. The native global Run/Queue button defaults to Use latest and does not resend your message. Chat first to save a reply. Ask for next scene and Rewrite reply explicitly request new assistant output; they are labeled accordingly.
 
 **New chat** starts a separate history. **Saved chats** reopens up to 500 most recently updated server conversations, restoring messages, summary and saved system/task/pinned/model settings. Empty new chats appear in the picker after their first successful turn. Cloning/importing the same chapter ID shares its conversation. Appearance and image graph connections remain live and are not rewired by chat switching.
 

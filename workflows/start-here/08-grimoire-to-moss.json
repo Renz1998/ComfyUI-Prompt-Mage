@@ -1086,7 +1086,7 @@
         "Create one image prompt per turn for a three-scene travel sequence: inn, rainy village street, hilltop at dawn. Next step advances one scene. Keep appearance and major clothing consistent unless asked to change them. Return a single MOSS JSON object with summary {meta: list of strings, canvas: single, caption: detailed scene description}, items: list of {label: object, caption: string, bbox: [y_min,x_min,y_max,x_max]}, bbox_coord_space: abs_centralized, bbox_format: yxyx. Use the current canvas dimensions provided in the system context. Boxes use centered pixel coordinates, with x in [-width/2,width/2] and y in [-height/2,height/2]. Use major objects only; all boxes must have positive area inside the canvas. No Markdown or commentary. Do not create text items unless visible writing is explicitly requested.",
         "One adult traveler. Natural photographic lighting and plausible anatomy. No visible writing or watermarks.",
         "Write the first scene: an adult traveler in a green cloak studies an old map by lantern light in a wooden inn. Output JSON only.",
-        "Send",
+        "Use latest",
         "Local Qwen",
         "GPT-6.1 Terra · Recommended · $1 input / $5 output",
         "DeepSeek V4.1 Flash · Recommended · Text + images",

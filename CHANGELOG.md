@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.2 — Reuse approved replies by default
+
+- Global Run/Queue defaults to Use latest; existing nodes migrate their hidden action to reuse. Send overrides only the isolated chat job.
+- Labels continuation/rewrite/compaction as new requests to distinguish them from image generation using the saved reply.
+
 ## 1.17.1 — Resizable Grimoire chat and canvas sockets
 
 - Exposes permanent width/height input sockets, migrates existing nodes without shifting links, and suggests Resolution when dragging backward.

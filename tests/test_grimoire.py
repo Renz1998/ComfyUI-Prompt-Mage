@@ -25,6 +25,7 @@ class GrimoireTests(unittest.TestCase):
         self.modules.stop(); self.temp.cleanup()
 
     def call(self, replies=('A red mug.',), **kwargs):
+        kwargs.setdefault('action','Send')
         execute = Mock(side_effect=[SimpleNamespace(args=[r]) for r in replies])
         with patch('dart_plugin.py.nodes.grimoire.load_local_clip',return_value='encoder'), patch('dart_plugin.py.nodes.grimoire.execute_generation',execute):
             value = self.node.chat('chapter-1234', **kwargs)
@@ -83,7 +84,7 @@ class GrimoireTests(unittest.TestCase):
         self.assertEqual(state['settings']['task_instructions'],'Write travel scenes')
         self.assertEqual(state['settings']['pinned_facts'],'Green coat')
         with patch('dart_plugin.py.nodes.grimoire.load_local_clip',side_effect=AssertionError('Must not load a model')):
-            result=self.node.chat('chapter-1234',action='Use latest')
+            result=self.node.chat('chapter-1234')
         self.assertEqual(result['result'][0],'A red mug.')
         self.assertEqual(len(read_memory(memory_path('chapter-1234'))['turns']),2)
 
@@ -91,7 +92,7 @@ class GrimoireTests(unittest.TestCase):
         import torch
         execute=Mock(return_value=SimpleNamespace(args=['A green coat.']))
         with patch('dart_plugin.py.nodes.grimoire.load_local_clip',return_value='encoder'), patch('dart_plugin.py.nodes.grimoire.caption_image',return_value='Green coat on a chair.') as caption, patch('dart_plugin.py.nodes.grimoire.execute_generation',execute):
-            self.node.chat('chapter-1234',message='Use this outfit',image=torch.zeros(1,16,16,3))
+            self.node.chat('chapter-1234',message='Use this outfit',action='Send',image=torch.zeros(1,16,16,3))
         self.assertEqual(caption.call_args.args[0].shape,(1,16,16,3))
         self.assertIn('Green coat on a chair.',read_memory(memory_path('chapter-1234'))['turns'][0]['content'])
         self.assertNotIn('image',execute.call_args.kwargs)

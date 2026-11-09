@@ -23,12 +23,12 @@ const node={id:7,size:[650,900],widgets:['system_prompt','pinned_facts','task_in
     addDOMWidget(name,type,root,options){this.root=root;this.domOptions=options;this.chatWidget={serialize:options.serialize};return this.chatWidget;},computeSize(){return [650,680];},setSize(size){this.size=size;},setDirtyCanvas(){}};
 context.installGrimoire(node);
 await new Promise(resolve=>setTimeout(resolve,0));
-assert.equal(node.widgets.find(w=>w.name==='conversation_id').value,'07070707070707070707070707070707');assert.equal(node.chatWidget.serialize,false);assert.equal(node.domOptions.getMinHeight(),560);assert.equal(node.domOptions.getMaxHeight,undefined);node.size=[800,1300];
+assert.equal(node.widgets.find(w=>w.name==='conversation_id').value,'07070707070707070707070707070707');assert.equal(node.chatWidget.serialize,false);assert.equal(node.widgets.find(w=>w.name==='action').value,'Use latest');assert.equal(node.domOptions.getMinHeight(),560);assert.equal(node.domOptions.getMaxHeight,undefined);node.size=[800,1300];
 function all(root){return [root,...root.children.flatMap(all)];}
 const button=name=>all(node.root).find(e=>e.tag==='button'&&e.textContent===name);
 const composer=all(node.root).find(e=>e['aria-label']==='Message Grimoire');
 composer.value='Hello **Grimoire**';button('Send').listeners.click();await new Promise(resolve=>setTimeout(resolve,0));
-assert.deepEqual(Array.from(node.size),[800,1300]);assert.equal(queued,1);assert.equal(imageJobs,0);assert.deepEqual(Object.keys(job.output),['7']);button('Send').listeners.click();assert.equal(queued,1);
+assert.deepEqual(Array.from(node.size),[800,1300]);assert.equal(queued,1);assert.equal(imageJobs,0);assert.deepEqual(Object.keys(job.output),['7']);assert.equal(job.output['7'].inputs.action,'Send');assert.equal(node.widgets.find(w=>w.name==='action').value,'Use latest');button('Send').listeners.click();assert.equal(queued,1);
 node.onExecuted({grimoire:[{turns:[{role:'assistant',content:'<script>unsafe()</script>'}],summary:'Remember green cloak'}]});
 assert.ok(all(node.root).some(e=>e.textContent==='<script>unsafe()</script>'));assert.equal(all(node.root).some(e=>e.tag==='script'),false);
 const menu=all(node.root).find(e=>e['aria-label']==='Conversation actions');menu.value='Copy latest';await menu.listeners.change();assert.equal(copied,'<script>unsafe()</script>');

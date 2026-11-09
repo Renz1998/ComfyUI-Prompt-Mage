@@ -123,3 +123,11 @@ NODE_CLASS_MAPPINGS["DanbooruTagsTransformerGrimoire"] = PromptMageGrimoire
 NODE_DISPLAY_NAME_MAPPINGS["DanbooruTagsTransformerGrimoire"] = "Prompt Mage · Grimoire (Beta)"
 from .py.dart.grimoire_routes import register_grimoire_routes
 register_grimoire_routes()
+
+from .py.nodes.spell_scroll import PromptMageSpellScroll
+NODE_CLASS_MAPPINGS["DanbooruTagsTransformerSpellScroll"] = PromptMageSpellScroll
+NODE_DISPLAY_NAME_MAPPINGS["DanbooruTagsTransformerSpellScroll"] = "Prompt Mage · Spell Scroll"
+
+from .py.nodes.grimoire import PromptMageGrimoireTurn
+NODE_CLASS_MAPPINGS["DanbooruTagsTransformerGrimoireTurn"] = PromptMageGrimoireTurn
+NODE_DISPLAY_NAME_MAPPINGS["DanbooruTagsTransformerGrimoireTurn"] = "Prompt Mage · Grimoire Turn (Internal)"

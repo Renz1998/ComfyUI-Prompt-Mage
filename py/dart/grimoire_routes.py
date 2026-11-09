@@ -49,4 +49,18 @@ def register_grimoire_routes():
                         continue
             return result
         return web.json_response({'chats':await asyncio.to_thread(collect)},headers={'Cache-Control':'no-store'})
+    @PromptServer.instance.routes.post('/prompt_mage/grimoire/scroll')
+    async def scroll(request):
+        if not trusted_request(request):return web.json_response({'error':'Use this ComfyUI page.'},status=403)
+        from .spell_scroll import active_scroll, approve
+        try:
+            if request.content_type!='application/json' or not request.content_length or request.content_length>262144:raise ValueError('Invalid request size.')
+            data=await request.json()
+            if data.get('apply'):
+                value=approve(data['scroll_id'],data['conversation_id'],data['index'],data['text'],data.get('mode','Latest response'),data.get('field',''))
+            else:
+                with LOCK:value=active_scroll(data['scroll_id'])
+            return web.json_response({'active':value},headers={'Cache-Control':'no-store'})
+        except (ValueError,KeyError,TypeError,OSError) as error:
+            return web.json_response({'error':str(error)},status=400)
     return True

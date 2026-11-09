@@ -1,5 +1,5 @@
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.17.2';
-import { chatPrompt } from './grimoire_queue.mjs?v=1.16.0';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.18.0';
+import { chatPrompt } from './grimoire_queue.mjs?v=1.18.0';
 import { renderMarkdown } from './grimoire_markdown.mjs?v=1.16.0';
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
@@ -25,13 +25,32 @@ export function installGrimoire(node) {
     const chats=document.createElement('select');chats.setAttribute('aria-label','Saved chats');chats.style.cssText='width:100%;padding:8px;background:#18202d;color:#eee';
     const composer=document.createElement('textarea');composer.setAttribute('aria-label','Message Grimoire');composer.placeholder='Message Grimoire… Enter to send · Shift+Enter for a new line';composer.style.cssText='min-height:100px;width:100%;box-sizing:border-box;background:#101722;color:#eee;padding:12px;border:1px solid #b69962;border-radius:8px';
     const buttons=document.createElement('div');buttons.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
+    const targets=document.createElement('select');targets.setAttribute('aria-label','Spell Scroll destination');
+    const active=document.createElement('details'),activeTitle=document.createElement('summary'),activePreview=document.createElement('pre');active.append(activeTitle,activePreview);activeTitle.textContent='Active prompt: none applied';activePreview.style.cssText='white-space:pre-wrap;max-height:160px;overflow:auto';
+    node.properties ||= {};
+    function destinations(){
+        const readers=(node.graph?._nodes||app.graph?._nodes||[]).filter(n=>(n.comfyClass||n.type)==='DanbooruTagsTransformerSpellScroll');
+        const ids=readers.map(n=>n.widgets?.find(w=>w.name==='scroll_id')?.value).filter(Boolean);
+        targets.replaceChildren();for(const id of [...new Set(ids)]){const o=document.createElement('option');o.value=id;o.textContent='Spell Scroll: '+id;targets.append(o);}
+        targets.value=ids.includes(node.properties.mage_scroll_id)?node.properties.mage_scroll_id:ids[0]||'';
+        node.properties.mage_scroll_id=targets.value;
+    }
+    async function activePrompt(){
+        if(!targets.value){activeTitle.textContent='Active prompt: add a Spell Scroll node';activePreview.textContent='Connect Spell Scroll.prompt to your positive encoder. Chat is independent.';return;}
+        const requested=targets.value;try{const r=await api.fetchApi('/prompt_mage/grimoire/scroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scroll_id:requested})});if(!r.ok)throw Error();const v=(await r.json()).active;if(targets.value!==requested)return;activeTitle.textContent=v?'Active prompt: '+v.title+' · response '+(v.response_index+1):'Active prompt: none applied';activePreview.textContent=v?.text||'Choose Use this prompt on an assistant response. Chatting will not replace it.';}catch{activeTitle.textContent='Could not load active prompt';}
+    }
+    targets.addEventListener('change',()=>{node.properties.mage_scroll_id=targets.value;void activePrompt();});
+    async function applyResponse(index,text,chapter){
+        if(busy)return;destinations();if(!targets.value){status.textContent='Add a Spell Scroll node first and connect its prompt output to the image encoder.';return;}
+        try{const r=await api.fetchApi('/prompt_mage/grimoire/scroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apply:true,scroll_id:targets.value,conversation_id:chapter,index,text,mode:field('output_selection')?.value||'Latest response',field:field('json_field')?.value||''})});const v=await r.json();if(!r.ok)throw Error(v.error);status.textContent='Prompt applied. Run the image workflow to use it; no assistant call is needed.';await activePrompt();}catch(error){status.textContent='Could not apply prompt: '+error.message;}
+    }
     let latest='', busy=false, requestVersion=0, layout;const actions=new Map();
     function render(value) {
         history.replaceChildren();
-        for(const turn of value.turns||[]) {
+        for(const [index,turn] of (value.turns||[]).entries()) {
             const item=document.createElement('div');item.className='gm-message '+(turn.role==='user'?'gm-user':'gm-assistant');
             const role=document.createElement('small');role.className='gm-role';role.textContent=turn.role==='user'?'You':'Grimoire';item.append(role);
-            renderMarkdown(item,turn.content,async text=>{try{await navigator.clipboard.writeText(text);status.textContent='Copied';}catch{status.textContent='Clipboard unavailable · select the text to copy';}});history.append(item);
+            renderMarkdown(item,turn.content,async text=>{try{await navigator.clipboard.writeText(text);status.textContent='Copied';}catch{status.textContent='Clipboard unavailable · select the text to copy';}});if(turn.role==='assistant'){const apply=document.createElement('button');apply.type='button';apply.textContent='Use this prompt';const chapter=field('conversation_id').value;apply.addEventListener('click',()=>void applyResponse(index,turn.content,chapter));item.append(apply);}history.append(item);
         }
         if(!(value.turns||[]).length){const empty=document.createElement('div');empty.className='gm-empty';empty.textContent='✦\nWhat would you like to create?\nStart a conversation, or open a saved chat above.';history.append(empty);}
         latest=[...(value.turns||[])].reverse().find(t=>t.role==='assistant')?.content||'';
@@ -43,6 +62,7 @@ export function installGrimoire(node) {
     }
     async function listChats(){
         try{const r=await api.fetchApi('/prompt_mage/grimoire/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!r.ok)throw Error();const value=await r.json();
+            destinations();void activePrompt();
             chats.replaceChildren();const current=field('conversation_id').value;
             const add=(id,title)=>{const option=document.createElement('option');option.value=id;option.textContent=title;chats.append(option);};
             if(!(value.chats||[]).some(c=>c.id===current))add(current,'New conversation (not saved yet)');
@@ -75,9 +95,8 @@ export function installGrimoire(node) {
     button('Refresh history',()=>void load());
     button('Copy latest',async()=>{try{await navigator.clipboard.writeText(latest);status.textContent='Latest response copied';}catch{status.textContent='Clipboard unavailable · select and copy the response';}});
     button('Edit summary',()=>{field('summary_override').value=summary.value;status.textContent='Edit Summary override below; it is applied on the next successful run.';});
-    button('Generate image',async()=>{if(busy||!latest){status.textContent='Finish a chat response first.';return;}busy=true;field('action').value='Use latest';try{await app.queuePrompt(0,1);}catch{busy=false;status.textContent='Could not queue image workflow.';}});
     button('Refresh chats',()=>void listChats());
-    layout=layoutGrimoire(root,{title,status,chats,history,summary,composer,actions,field,changed:()=>controls()});
+    layout=layoutGrimoire(root,{title,status,chats,history,summary,composer,actions,field,targets,active,changed:()=>controls()});
     // An unset maximum lets ComfyUI allocate extra node height to the chat.
     node.addDOMWidget('grimoire_chat','GRIMOIRE_CHAT',root,{serialize:false,getMinHeight:()=>560,hideOnZoom:true}).serialize=false;
     const chatWidget=node.widgets?.find(w=>w.name==='grimoire_chat');if(chatWidget)node.widgets=[chatWidget,...node.widgets.filter(w=>w!==chatWidget)];

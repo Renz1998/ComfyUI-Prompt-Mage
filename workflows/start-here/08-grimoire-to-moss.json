@@ -1,8 +1,8 @@
 {
   "id": "b01508cd-3140-407a-aa34-4574d8c0d7c1",
   "revision": 0,
-  "last_node_id": 150,
-  "last_link_id": 236,
+  "last_node_id": 151,
+  "last_link_id": 238,
   "nodes": [
     {
       "id": 123,
@@ -25,7 +25,8 @@
           "type": "INT",
           "links": [
             214,
-            233
+            233,
+            235
           ]
         },
         {
@@ -33,7 +34,8 @@
           "type": "INT",
           "links": [
             215,
-            234
+            234,
+            236
           ]
         },
         {
@@ -267,7 +269,7 @@
           "widget": {
             "name": "text"
           },
-          "link": 235
+          "link": 237
         }
       ],
       "outputs": [
@@ -312,7 +314,7 @@
         {
           "name": "source",
           "type": "*",
-          "link": 236
+          "link": 238
         }
       ],
       "outputs": [
@@ -1055,9 +1057,7 @@
         {
           "name": "output",
           "type": "STRING",
-          "links": [
-            235
-          ]
+          "links": null
         },
         {
           "name": "latest_response",
@@ -1072,13 +1072,12 @@
         {
           "name": "report",
           "type": "STRING",
-          "links": [
-            236
-          ]
+          "links": null
         }
       ],
       "properties": {
-        "Node name for S&R": "DanbooruTagsTransformerGrimoire"
+        "Node name for S&R": "DanbooruTagsTransformerGrimoire",
+        "mage_scroll_id": "main-scroll"
       },
       "widgets_values": [
         "demo-e948ba314058427394f1cfb9e4ace3da",
@@ -1120,7 +1119,58 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "# GRIMOIRE · Conversation → MOSS\nThis is the main Zine-derived MOSS workflow with DART and Archmage removed. Grimoire replaces them; sampling, SLG and accelerator stay intact. Local Qwen is selected and shares Load CLIP with MOSS. No API key required.\n\n1. Download the same models/accelerator as the main workflow: https://github.com/Renz1998/ComfyUI-Prompt-Mage/blob/main/docs/MODEL_DOWNLOADS.md\n2. Type in the chat composer and click Send for a chat-only response. Next step continues the conversation. Click Generate image separately to reuse the saved response in the MOSS workflow. New chat starts another conversation; Saved chats reopens previous conversations. Open Instructions & model settings for the separate prompts. Message and task fields are separate.\n3. Appearance Overrides is supplied every turn. Change the example appearance traits or choose Keep unchanged. Resolution drives both prompt context and latent; this example uses 4:5.\n4. Clear conversation removes saved history/summary, retaining your configured fields. New chapter creates a separate saved history. Compact now summarizes older turns. Clear/compact block the primary output so dependent image generation does not run.\n5. Use the output socket for generation. Latest response retains the complete answer; output selection can extract JSON or a specific JSON field. Invalid MOSS schemas/boxes are saved for inspection but block output.\n\nMemory is plaintext JSON on the ComfyUI server under user/prompt_mage/grimoire, outside workflows. Exporting a workflow does not export history. Chapters are server-wide, not private per login. Do not use an untrusted shared server for sensitive chats. Existing images are remembered as text descriptions; reattach images for precise later inspection. Compaction is lossy and adds a model call. API keys are saved separately in the ComfyUI user directory; retain that directory on persistent pod storage. Model calls may still be billed after cancellation.\n\nStart a New chapter after importing this example if you want a separate conversation. A copied workflow with the same chapter ID shares memory. This beta is not a deterministic script counter: Next step is a conversational instruction, and you should review the result."
+        "# Chat → Apply → Generate\nGrimoire is for conversation only. Chat, then click Use this prompt on the response you want. Select main-scroll as the destination. Spell Scroll feeds the positive text encoder; Run/Queue reads only the applied snapshot, never the latest chat reply.\n\nChanging chats, regenerating and clearing history do not replace the applied prompt. Its source and contents appear in Active prompt. Apply another response explicitly to change it. If no prompt is applied, Spell Scroll stops with an explanation.\n\nModel downloads and sampling setup remain the same as the main workflow: https://github.com/Renz1998/ComfyUI-Prompt-Mage/blob/main/docs/MODEL_DOWNLOADS.md\n\nThe same Resolution drives both Grimoire canvas context, Spell Scroll validation and the latent. Keep the supplied MOSS accelerator and sampling settings. The recipe modifies text, not image pixels. Instructions and chats are server-side plaintext; keep the ComfyUI user directory on persistent storage."
+      ]
+    },
+    {
+      "id": 151,
+      "type": "DanbooruTagsTransformerSpellScroll",
+      "pos": [
+        -250,
+        -1500
+      ],
+      "size": [
+        500,
+        260
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "properties": {
+        "Node name for S&R": "DanbooruTagsTransformerSpellScroll"
+      },
+      "widgets_values": [
+        "main-scroll"
+      ],
+      "inputs": [
+        {
+          "name": "width",
+          "type": "INT",
+          "link": 235,
+          "shape": 7
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "link": 236,
+          "shape": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "links": [
+            237
+          ]
+        },
+        {
+          "name": "report",
+          "type": "STRING",
+          "links": [
+            238
+          ]
+        }
       ]
     }
   ],
@@ -1295,16 +1345,32 @@
     ],
     [
       235,
-      124,
+      123,
+      0,
+      151,
+      0,
+      "INT"
+    ],
+    [
+      236,
+      123,
+      1,
+      151,
+      1,
+      "INT"
+    ],
+    [
+      237,
+      151,
       0,
       126,
       1,
       "STRING"
     ],
     [
-      236,
-      124,
-      3,
+      238,
+      151,
+      1,
       127,
       0,
       "STRING"

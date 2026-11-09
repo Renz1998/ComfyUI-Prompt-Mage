@@ -85,7 +85,7 @@ class GrimoireTests(unittest.TestCase):
         self.assertEqual(state['settings']['pinned_facts'],'Green coat')
         with patch('dart_plugin.py.nodes.grimoire.load_local_clip',side_effect=AssertionError('Must not load a model')):
             result=self.node.chat('chapter-1234')
-        self.assertEqual(result['result'][0],'A red mug.')
+        self.assertIsInstance(result['result'][0],Blocker)
         self.assertEqual(len(read_memory(memory_path('chapter-1234'))['turns']),2)
 
     def test_image_reference_is_captioned_and_remembered_as_text(self):

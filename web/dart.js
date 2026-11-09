@@ -361,4 +361,4 @@ app.registerExtension({
         };
     },
 });
-import './grimoire.mjs?v=1.17.2';
+import './grimoire.mjs?v=1.18.0';

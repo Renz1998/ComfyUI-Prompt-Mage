@@ -14,8 +14,8 @@ from ..dart.moss import read_layout
 
 class PromptMageGrimoire(BaseNode):
     CATEGORY = 'Prompt Mage/Assistants'
-    DESCRIPTION = 'Persistent conversations with separate system/task/pinned instructions, optional appearance recipe and image references. History is saved as plaintext JSON on the ComfyUI server, outside workflows. Use a trusted server. Sending queues the connected workflow; clear/compact outputs are blocked downstream.'
-    OUTPUT_NODE = True
+    DESCRIPTION = 'Persistent conversations with separate system/task/pinned instructions, optional appearance recipe and image references. History is saved as plaintext JSON on the ComfyUI server, outside workflows. Use a trusted server. Sending queues only a chat turn and required inputs. Use Spell Scroll for image generation.'
+    OUTPUT_NODE = False
     FUNCTION = 'chat'
     RETURN_TYPES = ('STRING','STRING','STRING','STRING')
     RETURN_NAMES = ('output','latest_response','memory_summary','report')
@@ -70,14 +70,7 @@ class PromptMageGrimoire(BaseNode):
                 save_memory(path, state)
                 return self.result(state, '', None, dict(status='cleared', note='History and summary cleared; configured instructions/pinned facts remain.'), ExecutionBlocker)
             if action == 'Use latest':
-                latest = next((t['content'] for t in reversed(state['turns']) if t['role']=='assistant'), '')
-                if not latest:
-                    raise ValueError('Chat first, then use Generate image.')
-                if output_selection == 'MOSS JSON layout':
-                    output = json.dumps(read_layout(select_output(latest,'JSON only',''),width,height),ensure_ascii=False,indent=2)
-                else:
-                    output = select_output(latest,output_selection,json_field)
-                return self.result(state,latest,output,dict(status='reused',note='Saved response reused; no model call.'),ExecutionBlocker)
+                return self.result(state,'',None,dict(status='chat-only',note='Use Spell Scroll to read an explicitly applied prompt.'),ExecutionBlocker)
             if summary_override.strip():
                 state['summary'] = summary_override.strip()
             if assistant_backend == 'OpenAI API':
@@ -154,3 +147,9 @@ class PromptMageGrimoire(BaseNode):
         report.update(turns=len(state['turns']), summary_chars=len(state['summary']))
         return {'ui': {'grimoire': [dict(turns=state['turns'], summary=state['summary'], settings=state.get('settings',{}), report=report)]},
                 'result': (output if output is not None else blocker('Grimoire: ' + report['status']), latest, state['summary'], json.dumps(report,ensure_ascii=False,indent=2))}
+
+
+class PromptMageGrimoireTurn(PromptMageGrimoire):
+    OUTPUT_NODE=True
+    DEPRECATED=True
+    CATEGORY='Prompt Mage/Internal'

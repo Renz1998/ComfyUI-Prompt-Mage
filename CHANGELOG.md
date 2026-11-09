@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.18.0 — Separate conversation from applied prompts
+
+- Grimoire is chat-only; explicit chat requests use an internal executor. Normal workflow runs exclude the conversation node.
+- Adds Spell Scroll, a model-free reader of an explicitly applied response snapshot. Use this prompt is available per assistant reply; active source/text stay visible across chat changes.
+- Updates the MOSS sample so only Spell Scroll feeds the encoder. Existing direct Grimoire connections require rewiring; no automatic latest-response selection is performed.
+
 ## 1.17.2 — Reuse approved replies by default
 
 - Global Run/Queue defaults to Use latest; existing nodes migrate their hidden action to reuse. Send overrides only the isolated chat job.

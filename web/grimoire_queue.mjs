@@ -11,6 +11,6 @@ export function chatPrompt(snapshot, nodeId, action, message) {
         for(const value of Object.values(item.inputs||{}))if(Array.isArray(value)&&value.length===2&&Number.isInteger(value[1]))visit(value[0]);
         visiting.delete(key);selected[key]=JSON.parse(JSON.stringify(item));
     }
-    visit(id);selected[id].inputs.action=action;selected[id].inputs.message=message;
+    visit(id);selected[id].class_type='DanbooruTagsTransformerGrimoireTurn';selected[id].inputs.action=action;selected[id].inputs.message=message;
     return {...snapshot,output:selected};
 }

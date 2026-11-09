@@ -1,5 +1,5 @@
 let layoutCounter=0;
-export function layoutGrimoire(root, {title,status,chats,history,summary,composer,actions,field,changed}) {
+export function layoutGrimoire(root, {title,status,chats,history,summary,composer,actions,field,targets,active,changed}) {
     const layoutId='grimoire-panel-'+(++layoutCounter);
     const previousWidth=root.style.width,previousHeight=root.style.height;
     root.className='grimoire-app';root.style.cssText='height:100%;box-sizing:border-box';
@@ -53,17 +53,17 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     const memoryEdit=make('details');memoryEdit.append(make('summary','','Advanced memory override'));control(memoryEdit,'summary_override','Summary override','Apply an edited summary on the next successful turn, then clear this field.');settings.append(memoryEdit);
     history.className='gm-history';history.style.cssText='';status.className='gm-status';
     const composerBox=make('div','gm-composer');composer.style.cssText='';composerBox.append(composer,make('small','','Enter to send · Shift+Enter for a new line'));
-    const footer=make('div','gm-footer');const send=button('Send',invoke('Send'),'gm-primary'),generate=button('Generate image',invoke('Generate image'));
-    generate.title='Run image generation using the saved reply. Does not send another assistant request.';send.title='Send a new assistant request.';
+    const footer=make('div','gm-footer');const send=button('Send',invoke('Send'),'gm-primary');
+    send.title='Send a new assistant request.';
     const more=make('select');more.setAttribute('aria-label','Conversation actions');
     const blank=make('option','','More actions…');blank.value='';more.append(blank);
     for(const action of ['Next step','Regenerate','Copy latest','Refresh history','Refresh chats','Compact now','Clear conversation']){const option=make('option','',action==='Next step'?'Ask for next scene (new request)':action==='Regenerate'?'Rewrite reply (new request)':action==='Compact now'?'Compact memory (new request)':action);option.value=action;more.append(option);}
     more.addEventListener('change',()=>{actions.get(more.value)?.();more.value='';});
-    footer.append(send,generate,make('div','gm-spacer'),more);
+    footer.append(send,make('div','gm-spacer'),more);
     chatPage.append(history,memory,composerBox,footer);
-    root.replaceChildren();root.append(style,header,chatbar,tabs,status,chatPage,instructions,settings);tab('Chat');
+    root.replaceChildren();root.append(style,header,chatbar,tabs,status,...(targets?[targets,active]:[]),chatPage,instructions,settings);tab('Chat');
     return {keyMount,tab,sync(backend,busy,hasAnswer){
-        provider.textContent=backend+' · Settings';send.disabled=busy;generate.disabled=busy||!hasAnswer;
+        provider.textContent=backend+' · Settings';send.disabled=busy;
         for(const b of bindings){b.sync();b.row.hidden=b.name==='openai_model'?backend!=='OpenAI API':b.name==='deepseek_model'?backend!=='DeepSeek API':b.name==='local_model'?backend!=='Local Qwen':b.name==='json_field'?field('output_selection')?.value!=='JSON field':false;}
         keyHint.hidden=backend!=='Local Qwen';memory.hidden=!summary.value;
     }};

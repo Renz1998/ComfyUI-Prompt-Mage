@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.16.0 — Chat composer and saved-chat picker
+
+- Grimoire now has a message composer, Enter/Shift+Enter, New chat and a persistent saved-chat picker with restored task/system/pinned settings.
+- Send queues only Grimoire and upstream inputs; generated-image dependencies are rejected. Generate image separately reuses the saved response without another assistant call.
+- Adds safe Markdown headings, lists, bold/italic, links and fenced code with Copy code. Raw HTML and remote image embeds are not rendered.
+
 ## 1.15.1 — RunPod UI and saved provider keys
 
 - Fixes Grimoire creation on HTTP origins without crypto.randomUUID. Uses random bytes for chapter IDs instead.

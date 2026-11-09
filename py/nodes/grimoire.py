@@ -32,7 +32,7 @@ class PromptMageGrimoire(BaseNode):
             'task_instructions': ('STRING', {'default':'', 'multiline':True, 'tooltip':'Current project, sequence, schema and constraints. Always included separately from history.'}),
             'pinned_facts': ('STRING', {'default':'', 'multiline':True, 'tooltip':'Explicit durable facts. Always sent verbatim. Nothing is silently learned or added here.'}),
             'message': ('STRING', {'default':'Describe an adult traveler reading a map in a lantern-lit inn.', 'multiline':True, 'tooltip':'Next message. Next step sends a continuation request. Regenerate replaces the last answer without adding a new user turn.'}),
-            'action': (['Send','Next step','Regenerate','Compact now','Clear conversation'], {'default':'Send','tooltip':'Clear removes stored summary/history but keeps your configured system/task/pinned fields. Clear/compact do not run downstream generators.'}),
+            'action': (['Send','Next step','Regenerate','Compact now','Clear conversation','Use latest'], {'default':'Send','tooltip':'Clear removes stored summary/history but keeps your configured system/task/pinned fields. Clear/compact do not run downstream generators.'}),
             'assistant_backend': (['Local Qwen','OpenAI API','DeepSeek API'], {'default':'Local Qwen','tooltip':'API modes send conversation text and supported image references to the selected provider. Charges apply.'}),
             'openai_model': (list(MODELS), {'default':DEFAULT_MODEL}),
             'deepseek_model': (list(DS_MODELS), {'default':DS_DEFAULT}),
@@ -60,15 +60,24 @@ class PromptMageGrimoire(BaseNode):
         for value in (system_prompt, task_instructions, pinned_facts, message, summary_override):
             if len(value) > 32768:
                 raise ValueError('Each Grimoire text field is limited to 32,768 characters.')
-        if action not in ('Send','Next step','Regenerate','Compact now','Clear conversation'):
+        if action not in ('Send','Next step','Regenerate','Compact now','Clear conversation','Use latest'):
             raise ValueError('Choose a supported conversation action.')
         with LOCK:
             path = memory_path(conversation_id)
             state = copy.deepcopy(read_memory(path))
             if action == 'Clear conversation':
-                state = dict(version=1, summary='', turns=[])
+                state = dict(version=1, summary='', turns=[], settings=state.get('settings',{}))
                 save_memory(path, state)
                 return self.result(state, '', None, dict(status='cleared', note='History and summary cleared; configured instructions/pinned facts remain.'), ExecutionBlocker)
+            if action == 'Use latest':
+                latest = next((t['content'] for t in reversed(state['turns']) if t['role']=='assistant'), '')
+                if not latest:
+                    raise ValueError('Chat first, then use Generate image.')
+                if output_selection == 'MOSS JSON layout':
+                    output = json.dumps(read_layout(select_output(latest,'JSON only',''),width,height),ensure_ascii=False,indent=2)
+                else:
+                    output = select_output(latest,output_selection,json_field)
+                return self.result(state,latest,output,dict(status='reused',note='Saved response reused; no model call.'),ExecutionBlocker)
             if summary_override.strip():
                 state['summary'] = summary_override.strip()
             if assistant_backend == 'OpenAI API':
@@ -134,10 +143,14 @@ class PromptMageGrimoire(BaseNode):
                     report.update(status='blocked', note='Answer saved, but output extraction failed: ' + str(error))
                 if isinstance(encoder, OpenAIEncoder):
                     report['api_calls'] = encoder.calls
+                state['settings'] = dict(system_prompt=system_prompt, task_instructions=task_instructions,
+                    pinned_facts=pinned_facts, assistant_backend=assistant_backend, openai_model=openai_model,
+                    deepseek_model=deepseek_model, local_model=local_model, thinking=thinking, max_tokens=max_tokens,
+                    auto_compact=auto_compact, output_selection=output_selection, json_field=json_field)
                 save_memory(path, state)
                 return self.result(state, latest, output, report, ExecutionBlocker)
 
     def result(self, state, latest, output, report, blocker):
         report.update(turns=len(state['turns']), summary_chars=len(state['summary']))
-        return {'ui': {'grimoire': [dict(turns=state['turns'], summary=state['summary'], report=report)]},
+        return {'ui': {'grimoire': [dict(turns=state['turns'], summary=state['summary'], settings=state.get('settings',{}), report=report)]},
                 'result': (output if output is not None else blocker('Grimoire: ' + report['status']), latest, state['summary'], json.dumps(report,ensure_ascii=False,indent=2))}

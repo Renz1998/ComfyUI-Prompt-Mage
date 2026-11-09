@@ -72,6 +72,16 @@ class GrimoireTests(unittest.TestCase):
         _,execute=self.call(message='New scene',appearance=appearance)
         self.assertIn('Brown',execute.call_args.kwargs['system_prompt'])
 
+    def test_saved_settings_and_reuse_without_model_call(self):
+        self.call(message='Hello',task_instructions='Write travel scenes',pinned_facts='Green coat')
+        state=read_memory(memory_path('chapter-1234'))
+        self.assertEqual(state['settings']['task_instructions'],'Write travel scenes')
+        self.assertEqual(state['settings']['pinned_facts'],'Green coat')
+        with patch('dart_plugin.py.nodes.grimoire.load_local_clip',side_effect=AssertionError('Must not load a model')):
+            result=self.node.chat('chapter-1234',action='Use latest')
+        self.assertEqual(result['result'][0],'A red mug.')
+        self.assertEqual(len(read_memory(memory_path('chapter-1234'))['turns']),2)
+
     def test_image_reference_is_captioned_and_remembered_as_text(self):
         import torch
         execute=Mock(return_value=SimpleNamespace(args=['A green coat.']))

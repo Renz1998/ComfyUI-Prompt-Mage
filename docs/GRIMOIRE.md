@@ -18,7 +18,13 @@ Grimoire is a separate conversation node, not an Archmage replacement. [Complete
 
 ## Conversation controls
 
-**Send** queues one entire connected workflow. **Next step** requests a continuation; it is model-guided, not a guaranteed script index. **Regenerate** replaces the most recent answer without adding another user message. Failed calls leave the saved conversation unchanged. Successful history writes are atomic.
+**Send** uses the chat composer (Enter sends; Shift+Enter inserts a newline). It queues only Grimoire and upstream inputs through ComfyUI, leaving downstream samplers and image saving out. It may wait behind other queued work. If a reference depends on a sampler, chat refuses to queue it; use a loaded reference instead. **Generate image** runs the connected workflow with **Use latest**, reusing the stored response without another assistant call. The native global Run button still follows the node's selected action.
+
+**New chat** starts a separate history. **Saved chats** reopens up to 500 most recently updated server conversations, restoring messages, summary and saved system/task/pinned/model settings. Empty new chats appear in the picker after their first successful turn. Cloning/importing the same chapter ID shares its conversation. Appearance and image graph connections remain live and are not rewired by chat switching.
+
+Messages support safe Markdown: headings, lists, bold/italic, HTTPS/HTTP links and fenced code blocks with Copy code. Raw HTML and remote image embeds are not executed or loaded. Open **Instructions & model settings** for the separate prompts and provider choices.
+
+**Next step** requests a continuation; it is model-guided, not a guaranteed script index. **Regenerate** replaces the most recent answer without adding another user message. Failed calls leave the saved conversation unchanged. Successful history writes are atomic.
 
 **Compact now** and **Clear conversation** block the primary output to avoid generating an image during maintenance. Clear removes stored turns and summary; configured instructions/pinned facts remain. **New chapter** changes the ID and starts a separate history. Old chapters remain on disk. This interface does not permanently delete chapter files. Copying a workflow with the same ID shares its history; choose New chapter to separate them.
 

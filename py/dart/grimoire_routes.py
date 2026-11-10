@@ -12,6 +12,17 @@ def register_grimoire_routes():
     if getattr(PromptServer, 'instance', None) is None:
         return False
 
+    @PromptServer.instance.routes.post('/prompt_mage/grimoire/production_brief')
+    async def production_brief(request):
+        if not trusted_request(request):return web.json_response({'error':'Use this ComfyUI page.'},status=403)
+        try:
+            if request.content_type!='application/json' or not request.content_length or request.content_length>4096:raise ValueError('Invalid production brief request.')
+            data=await request.json()
+            from .production_brief import latest,read
+            value=read(data['brief_id']) if data.get('brief_id') else latest(data['conversation_id'])
+            return web.json_response({'brief':value},headers={'Cache-Control':'no-store'})
+        except (ValueError,KeyError,TypeError,OSError) as e:return web.json_response({'error':str(e)},status=400)
+
     @PromptServer.instance.routes.post('/prompt_mage/grimoire/attachment')
     async def upload_attachment(request):
         if not trusted_request(request):

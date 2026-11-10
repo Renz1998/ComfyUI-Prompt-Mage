@@ -22,6 +22,7 @@ def validate_recipe(job,node_id):
     if not isinstance(job,dict) or not isinstance(job.get('output'),dict):raise ValueError('A connected Foundry workflow is required.')
     graph=copy.deepcopy(job['output']);node_id=str(node_id)
     if graph.get(node_id,{}).get('class_type')!=FOUNDRY:raise ValueError('Foundry is missing from this workflow.')
+    graph[node_id]['inputs'].pop('production_brief',None)
     sinks=[key for key,n in graph.items() if n.get('class_type')==FOUNDRY+'ReviewOutput' and link(n.get('inputs',{}).get('run_id'),node_id,4) and link(n.get('inputs',{}).get('attempt_id'),node_id,5)]
     if len(sinks)!=1:raise ValueError('Connect exactly one Foundry Review Output to this node’s run_id and attempt_id.')
     def ancestors(key,seen=None,stack=None):
@@ -44,7 +45,7 @@ def validate_recipe(job,node_id):
         if n.get('class_type')=='SaveImage' and link(n.get('inputs',{}).get('filename_prefix'),node_id,6) and n['inputs'].get('images')==image:targets.append(key)
     # References are used when planning, not decoded again on every retry.
     for key in list(graph[node_id]['inputs']):
-        if key=='image' or key.startswith('image_') or key=='attachments':del graph[node_id]['inputs'][key]
+        if key=='image' or key.startswith('image_') or key in ('attachments','production_brief'):del graph[node_id]['inputs'][key]
     return dict(output=graph,workflow=job.get('workflow',{}),targets=targets,node_id=node_id)
 
 

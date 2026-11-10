@@ -1,8 +1,9 @@
+import {briefTargets,ensureBriefOutput,announceBrief} from './production_bridge.mjs?v=1.27.0';
 import { isAppliedResponse } from './grimoire_applied.mjs?v=1.22.1';
 import { ensureImageInputs } from './grimoire_images.mjs?v=1.22.1';
 import { installAttachments } from './grimoire_attachments.mjs?v=1.22.1';
 import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.22.1';
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.22.1';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.27.0';
 import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.22.1';
 import { renderMarkdown } from './grimoire_markdown.mjs?v=1.22.1';
 import { app } from '../../scripts/app.js';
@@ -12,6 +13,7 @@ import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_k
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
+    ensureBriefOutput(node);
     ensureCanvasInputs(node);
     ensureImageInputs(node);
     const chapterId=()=>{
@@ -143,6 +145,12 @@ export function installGrimoire(node) {
             if(['Send','Edit message'].includes(action)){pendingEdit=null;layout?.setEditing(false);const pending=document.createElement('div');pending.className='gm-message gm-user';pending.textContent=text;history.append(pending);composer.value='';history.scrollTop=history.scrollHeight;}} catch(error){busy=false;controls();status.textContent='Could not queue: '+(error?.message||'Check ComfyUI status.');}
     }
     function button(label, callback) {actions.set(label,callback);const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',callback);buttons.append(b);}
+    button('Send brief to Foundry',async()=>{
+        if(busy)return;if(!briefTargets(node).length){status.textContent='Connect production_brief to Foundry.production_brief first.';return;}
+        busy=true;controls();status.textContent='Preparing the agreed production brief · one assistant request; no images are rendered…';
+        try{const snapshot=await app.graphToPrompt(),job=chatPrompt(snapshot,node.id,'Use latest','');job.output[String(node.id)].class_type='DanbooruTagsTransformerGrimoireBrief';const result=await queueChat(api,job,node.id);if(!result?.prompt_id||Object.keys(result.node_errors||{}).length)throw Error('ComfyUI rejected the production brief request.');chatJob=result.prompt_id;}
+        catch(error){busy=false;controls();status.textContent='Could not prepare production brief: '+error.message;}
+    });
     button('Send',()=>void run('Send'));
     actions.set('Cancel edit',()=>{pendingEdit=null;composer.value='';layout?.setEditing(false);status.textContent='Edit cancelled';});
     button('Next step',()=>void run('Next step'));
@@ -173,7 +181,7 @@ export function installGrimoire(node) {
             if(widget.element?.style)widget.element.style.display='none';
             if(widget.inputEl?.style)widget.inputEl.style.display='none';
         }
-        layout?.sync(backend,busy||Boolean(attachmentUI?.busy),Boolean(latest));
+        layout?.sync(backend,busy||Boolean(attachmentUI?.busy),Boolean(latest),briefTargets(node).length>0);
         refreshOpenAIKeyWidget(node);refreshDeepSeekKeyWidget(node);
         const minimum=node.computeSize();
         node.setSize([Math.max(650,node.size[0],minimum[0]),Math.max(node.size[1],minimum[1])]);node.setDirtyCanvas(true,true);
@@ -182,13 +190,13 @@ export function installGrimoire(node) {
     field('assistant_backend').callback=function(...args){callback?.apply(this,args);controls();};
     const idCallback=field('conversation_id').callback;
     field('conversation_id').callback=function(...args){idCallback?.apply(this,args);void load();};
-    const executed=node.onExecuted;node.onExecuted=function(message){busy=false;queuedFiles=[];queuedText='';chatJob=null;executed?.apply(this,arguments);if(message.grimoire?.[0]){render(message.grimoire[0]);void listChats();}};
+    const executed=node.onExecuted;node.onExecuted=function(message){busy=false;queuedFiles=[];queuedText='';chatJob=null;executed?.apply(this,arguments);if(message.production_brief?.[0]){announceBrief(message.production_brief[0]);status.textContent='Production brief saved. Idle connected Foundry drafts can import it; approved runs stay unchanged.';controls();}if(message.grimoire?.[0]){render(message.grimoire[0]);void listChats();}};
     const failed=event=>{if(!chatJob||(event?.detail?.prompt_id&&event.detail.prompt_id!==chatJob))return;busy=false;chatJob=null;if(!composer.value)composer.value=queuedText;void attachmentUI?.reuse(queuedFiles.map(id=>({id})));queuedFiles=[];queuedText='';controls();status.textContent='Execution ended or failed. Review the ComfyUI error before retrying.';};
     api.addEventListener('execution_error',failed);api.addEventListener('execution_interrupted',failed);
     const removed=node.onRemoved;node.onRemoved=function(){attachmentUI?.destroy();api.removeEventListener('execution_error',failed);api.removeEventListener('execution_interrupted',failed);removed?.apply(this,arguments);};
-    const connections=node.onConnectionsChange;node.onConnectionsChange=function(){connections?.apply(this,arguments);ensureImageInputs(this);};
+    const connections=node.onConnectionsChange;node.onConnectionsChange=function(){connections?.apply(this,arguments);ensureImageInputs(this);if(layout)controls();};
     const serialized=node.onSerialize;node.onSerialize=function(data){serialized?.apply(this,arguments);data.properties ||= {};data.properties.mage_grimoire_size=Array.from(this.size);data.mage_grimoire_fields=Object.fromEntries((this.widgets||[]).filter(w=>w.serialize!==false).map(w=>[w.name,w.value]));};
-    const configured=node.onConfigure;node.onConfigure=function(data){const saved=data?.properties?.mage_grimoire_size||data?.size;configured?.apply(this,arguments);if(data?.mage_grimoire_fields){for(const [name,value]of Object.entries(data.mage_grimoire_fields))if(field(name))field(name).value=value;}else if(Array.isArray(data?.widgets_values)){legacyFields.forEach((name,i)=>{if(field(name)&&i<data.widgets_values.length)field(name).value=data.widgets_values[i];});for(const name of ['chat_mode','style_preset','style_notes','edit_original','edit_index'])if(field(name))field(name).value=fieldDefaults.get(name);for(const [i,name]of [[17,'width'],[18,'height']])if(field(name)&&Number.isFinite(data.widgets_values[i]))field(name).value=data.widgets_values[i];}if(Array.isArray(saved)&&saved.length===2&&saved.every(Number.isFinite))this.setSize(saved);ensureCanvasInputs(this);ensureImageInputs(this);if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
+    const configured=node.onConfigure;node.onConfigure=function(data){const saved=data?.properties?.mage_grimoire_size||data?.size;configured?.apply(this,arguments);if(data?.mage_grimoire_fields){for(const [name,value]of Object.entries(data.mage_grimoire_fields))if(field(name))field(name).value=value;}else if(Array.isArray(data?.widgets_values)){legacyFields.forEach((name,i)=>{if(field(name)&&i<data.widgets_values.length)field(name).value=data.widgets_values[i];});for(const name of ['chat_mode','style_preset','style_notes','edit_original','edit_index'])if(field(name))field(name).value=fieldDefaults.get(name);for(const [i,name]of [[17,'width'],[18,'height']])if(field(name)&&Number.isFinite(data.widgets_values[i]))field(name).value=data.widgets_values[i];}if(Array.isArray(saved)&&saved.length===2&&saved.every(Number.isFinite))this.setSize(saved);ensureBriefOutput(this);ensureCanvasInputs(this);ensureImageInputs(this);if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
     controls();Promise.resolve().then(controls);void load();
 }
 

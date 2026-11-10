@@ -99,3 +99,7 @@ The captured **Planning settings** overview shows model, style, canvas, run mode
 When the decoded image is saved, the panel updates to **Reviewing saved image · waiting for [provider]** before the API call. It shows the actual image while review is pending, instead of continuing to show the reserved/rendering state. Active runs also refresh their status every five seconds, repainting only when the server record changes. API reviews may take longer than a render; provider timeouts still stop with a saved-image recovery path.
 
 The 1.26.1 seven-frame test used the user's current OpenAI Terra configuration, two references, appearance, MOSS sampler and 1728 × 2144 canvas. These captured settings were compared before the run and matched. Preview generated zero images; one approval completed all seven frames with seven renders and fifteen assistant calls, no retries or skips. Overall reviewer scores were 94, 87, 97, 89, 94, 91 and 88. WebSocket monitoring confirmed seven saved-image review-stage events before provider completion. All accepted PNGs retained their native workflow metadata and the completed collection manifest listed seven files. This verifies the local pipeline, not a general image-quality benchmark or RunPod deployment.
+
+## Conversational setup
+
+Connect Grimoire’s production_brief output to Foundry and explicitly send an agreed brief. [Grimoire → Foundry guide](GRIMOIRE_FOUNDRY.md). Import fills a new draft while keeping Foundry’s model, keys and spending caps; later chat does not alter it.

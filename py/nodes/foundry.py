@@ -47,8 +47,12 @@ class PromptMageFoundry(BaseNode):
             'physical_tolerance':(['Relaxed','Balanced','Strict'],{'default':'Balanced','tooltip':'Independent of prompt-match tolerance. Balanced checks physically coherent anatomy, support, garments and integration; Strict rejects smaller ambiguities. Major defects always block.'}),
             'passing_score':('INT',{'default':80,'min':50,'max':100,'tooltip':'Recommended 80/100 overall: 40% prompt match, 25% usability, 35% physical inspection. First passing image advances immediately. Major defects and missing must-haves still block.'}),
             'failure_policy':(['Skip frame and continue','Pause for review'],{'default':'Skip frame and continue','tooltip':'Automatic mode: if no try passes, record the missing frame and continue, or pause for your review. Rejected images never enter the accepted folder.'}),
+            'production_brief':('MAGE_PRODUCTION_BRIEF',{'lazy':True,'tooltip':'Connect Grimoire.production_brief. Send a brief explicitly in Grimoire to fill this new plan. Chatting and rendering never refresh it automatically.'}),
+            'brief_id':('STRING',{'default':'','tooltip':'Managed by explicit Grimoire brief import. Approved plans freeze the imported snapshot.'}),
             'output_folder':('STRING',{'default':'','tooltip':'Optional collection folder name inside ComfyUI output/PromptMage-Foundry. Empty uses the AI project title. Accepted images are collected in its accepted subfolder.'}),
         }}
+
+    def check_lazy_status(self,**kwargs):return []
 
     @classmethod
     def IS_CHANGED(cls,**kwargs):return float('nan')
@@ -86,10 +90,17 @@ class PromptMageFoundryPlan(PromptMageFoundry):
         inputs=super().INPUT_TYPES();inputs['hidden']={'extra_pnginfo':'EXTRA_PNGINFO','unique_id':'UNIQUE_ID'};return inputs
 
     def prepare(self,run_id,conversation_id='',template_id='single',brief='',shared_rules='',review_rules='',shot_count=1,
-                max_attempts=3,max_renders=3,max_calls=8,width=1024,height=1024,clip=None,appearance=None,assistant_profile=store.ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',run_mode='Automatic',review_tolerance='Balanced',reference_instructions='',attachments='[]',reference_roles='{}',output_folder='',physical_tolerance='Balanced',passing_score=80,failure_policy='Skip frame and continue',**kwargs):
+                max_attempts=3,max_renders=3,max_calls=8,width=1024,height=1024,clip=None,appearance=None,assistant_profile=store.ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',run_mode='Automatic',review_tolerance='Balanced',reference_instructions='',attachments='[]',reference_roles='{}',output_folder='',physical_tolerance='Balanced',passing_score=80,failure_policy='Skip frame and continue',brief_id='',**kwargs):
         from ..dart.foundry_runner import assert_can_plan
         assert_can_plan((kwargs.get('extra_pnginfo') or {}).get('workflow'),kwargs.get('unique_id'))
+        imported=None
+        if brief_id:
+            from ..dart.production_brief import read
+            imported=read(brief_id)
+            if appearance is None:appearance=imported.get('appearance')
         with store.LOCK:value=store.create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance,assistant_profile,style_preset,style_notes,review_tolerance,run_mode,output_folder,physical_tolerance,passing_score,failure_policy)
+        if imported:
+            value['production_brief_source']={k:imported[k] for k in ('id','conversation_id','title','created')};store.write(value)
         images=[(name,kwargs[name]) for name in ('image',*[f'image_{i}' for i in range(2,7)]) if kwargs.get(name) is not None]
         value=ai.plan(value,clip,images,attachments,reference_instructions,reference_roles)
         from comfy_execution.graph import ExecutionBlocker

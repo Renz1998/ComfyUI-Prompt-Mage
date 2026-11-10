@@ -5,6 +5,7 @@ const link=(value,id,slot)=>Array.isArray(value)&&String(value[0])===String(id)&
 export function foundryPrompt(snapshot,nodeId,operation,{runId,attemptId='',remote=false}={}) {
     const id=String(nodeId),graph=JSON.parse(JSON.stringify(snapshot.output));
     if(graph[id]?.class_type!==FOUNDRY)throw Error('Foundry is disabled or missing.');
+    delete graph[id].inputs.production_brief;
     graph[id].inputs.run_id=runId;graph[id].inputs.attempt_id=attemptId;
     if(remote)delete graph[id].inputs.clip;
     if(operation==='review_saved')for(const key of Object.keys(graph[id].inputs))if(key==='image'||key.startsWith('image_')||key==='attachments')delete graph[id].inputs[key];

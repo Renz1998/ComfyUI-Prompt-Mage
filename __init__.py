@@ -145,3 +145,7 @@ register_foundry_routes()
 
 from .py.dart.gemini_routes import register_gemini_routes
 register_gemini_routes()
+
+from .py.nodes.production_brief import PromptMageGrimoireBrief
+NODE_CLASS_MAPPINGS["DanbooruTagsTransformerGrimoireBrief"] = PromptMageGrimoireBrief
+NODE_DISPLAY_NAME_MAPPINGS["DanbooruTagsTransformerGrimoireBrief"] = "Prompt Mage · Production Brief (Internal)"

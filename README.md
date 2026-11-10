@@ -41,6 +41,8 @@ Restart ComfyUI, refresh the browser, then search **Prompt Mage** or **Archmage*
 
 **[Foundry (Experimental)](docs/FOUNDRY_EXPERIMENT.md):** approve a script once, then the server renders, reviews against an adjustable passing score, retries and advances automatically. Supports Local Qwen, DeepSeek, OpenAI and Gemini. Checks anatomy and physical scene cohesion separately from prompt match, names collection folders, and gathers accepted frames. Includes Archmage styles, IG carousel templates and a numbered drag-and-drop reference gallery for outfits, poses and props. [Separate testing workflow](workflows/experimental/01-foundry-single-frame-moss.json); Grimoire workflows stay independent.
 
+**[Grimoire → Foundry](docs/GRIMOIRE_FOUNDRY.md):** discuss a project, then explicitly send the agreed production brief through the dedicated connection to fill an idle Foundry draft. [Example workflow](workflows/experimental/02-grimoire-to-foundry-moss.json). Later chat does not change an imported snapshot.
+
 **[Chat → Apply → Generate](docs/SPELL_SCROLL.md):** Grimoire handles conversation. Click **Use this prompt** on a chosen reply; **Spell Scroll** reads that approved snapshot for image generation. Further chat never silently changes it, and normal workflow runs never call the assistant.
 
 **[Grimoire (Beta)](docs/GRIMOIRE.md)** is a separate persistent conversation node with conversational chat, a live style dropdown, system/task instructions, pinned facts, Appearance Overrides, drag-and-drop file attachments, multiple image inputs, Markdown, message editing, Archmage styles, a warmer default voice and validated MOSS prompt cards. [Grimoire → MOSS sample](workflows/start-here/08-grimoire-to-moss.json).

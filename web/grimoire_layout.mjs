@@ -70,6 +70,7 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     control(modeBar,'style_preset','Style / theme');
     const styleBinding=bindings.find(b=>b.name==='style_preset');if(styleBinding)styleBinding.row.title='Applies with your next message. Changing style makes no request. Ask Grimoire to create or revise a prompt when ready.';
     const applied=make('details','gm-applied');applied.append(make('summary','','Applied prompt'));if(targets){targets.title='Spell Scroll destination';applied.append(targets,active);modeBar.append(applied);}
+    const production=button('Send brief → Foundry',invoke('Send brief to Foundry'));production.title='After agreeing on the project, prepare a saved production brief. One assistant request; no image generation.';modeBar.append(production);
     control(settings,'style_notes','Custom style notes');
     control(settings,'assistant_backend','Assistant provider','Choose OpenAI or DeepSeek below to add an API key. Local Qwen needs no API key.');
     const keyMount=make('div');settings.append(keyMount);
@@ -86,13 +87,13 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     thinking.title='Ask a supported model to spend more effort planning the next reply. May take longer and use more tokens. Support depends on the selected model. Changing this toggle sends no request.';
     const more=make('select');more.setAttribute('aria-label','Conversation actions');
     const blank=make('option','','More actions…');blank.value='';more.append(blank);
-    for(const action of ['Next step','Regenerate','Copy latest','Refresh history','Refresh chats','Compact now','Clear conversation']){const option=make('option','',action==='Next step'?'Ask for next scene (new request)':action==='Regenerate'?'Rewrite reply (new request)':action==='Compact now'?'Compact memory (new request)':action);option.value=action;more.append(option);}
+    for(const action of ['Send brief to Foundry','Next step','Regenerate','Copy latest','Refresh history','Refresh chats','Compact now','Clear conversation']){const option=make('option','',action==='Next step'?'Ask for next scene (new request)':action==='Regenerate'?'Rewrite reply (new request)':action==='Compact now'?'Compact memory (new request)':action);option.value=action;more.append(option);}
     more.addEventListener('change',()=>{actions.get(more.value)?.();more.value='';});
     footer.append(attachmentButtonMount,send,thinking,cancelEdit,make('div','gm-spacer'),more);
     chatPage.append(modeBar,history,memory,composerBox,footer);
     root.replaceChildren();root.append(style,header,tabs,status,chatPage,instructions,settings);tab('Chat');
-    return {keyMount,attachmentMount,attachmentButtonMount,tab,setEditing(editing){cancelEdit.hidden=!editing;send.textContent=editing?'Send edited message':'Send';},sync(backend,busy,hasAnswer){
-        provider.title=backend+' · Open settings';send.disabled=busy;thinking.hidden=!field('thinking');thinking.disabled=busy;thinking.setAttribute('aria-pressed',String(Boolean(field('thinking')?.value)));thinking.textContent=field('thinking')?.value?'✧ Thinking · On':'✧ Thinking';
+    return {keyMount,attachmentMount,attachmentButtonMount,tab,setEditing(editing){cancelEdit.hidden=!editing;send.textContent=editing?'Send edited message':'Send';},sync(backend,busy,hasAnswer,hasFoundry=false){
+        production.disabled=busy||!hasAnswer||!hasFoundry;production.title=hasFoundry?'Prepare the agreed production brief. One assistant request; no image render.':'Connect production_brief to Foundry first.';provider.title=backend+' · Open settings';send.disabled=busy;thinking.hidden=!field('thinking');thinking.disabled=busy;thinking.setAttribute('aria-pressed',String(Boolean(field('thinking')?.value)));thinking.textContent=field('thinking')?.value?'✧ Thinking · On':'✧ Thinking';
         for(const b of bindings){b.sync();b.row.hidden=b.name==='openai_model'?backend!=='OpenAI API':b.name==='deepseek_model'?backend!=='DeepSeek API':b.name==='local_model'?backend!=='Local Qwen':b.name==='json_field'?field('output_selection')?.value!=='JSON field':false;}
         keyHint.hidden=backend!=='Local Qwen';memory.hidden=!summary.value;
     }};

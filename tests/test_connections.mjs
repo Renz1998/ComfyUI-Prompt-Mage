@@ -40,3 +40,6 @@ assert.equal(connectionsFor(beta,'appearance','ATELIER_APPEARANCE',false)[0].typ
 assert.equal(connectionsFor(beta,'image','IMAGE',false)[1].type,'DanbooruTagsTransformerImageBatchUpload');
 assert.equal(connectionsFor(beta,'description','STRING',true)[0].slot,'idea');
 assert.equal(connectionsFor(beta,'width','INT',true)[0].slot,'width');
+
+assert.equal(connectionsFor("DanbooruTagsTransformerGrimoire","production_brief","MAGE_PRODUCTION_BRIEF",true)[0].type,"DanbooruTagsTransformerFoundry");
+assert.equal(connectionsFor("DanbooruTagsTransformerFoundry","production_brief","MAGE_PRODUCTION_BRIEF",false)[0].type,"DanbooruTagsTransformerGrimoire");

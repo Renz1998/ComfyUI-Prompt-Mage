@@ -144,6 +144,9 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
         with patch.dict(runner.TASKS,{self.id:SimpleNamespace(done=lambda:False)}),patch.object(runner,'load_recipe',return_value=recipe):
             with self.assertRaisesRegex(ValueError,'already processing'):runner.assert_can_plan({'id':'same-workflow'},'1')
             runner.assert_can_plan({'id':'different-workflow'},'1')
+    def test_generation_recipe_removes_the_live_grimoire_link(self):
+        v=workflow();v['output']['1']['inputs']['production_brief']=['11',4];v['output']['11']={'class_type':'DanbooruTagsTransformerGrimoire','inputs':{'image':['6',0]}}
+        recipe=runner.validate_recipe(v,'1');self.assertNotIn('production_brief',recipe['output']['1']['inputs'])
     def test_recipe_rejects_unrelated_images_and_seedless_workflows(self):
         for change in ('prompt','seed','batch'):
             graph=workflow()

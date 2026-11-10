@@ -3,7 +3,7 @@ import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { convertToInput } from "../../extensions/core/widgetInputs.js";
 import { addTextPreviewWidgets, updateTextPreviewWidgets } from "../../extensions/core/textPreviewWidgets.js";
-import { connectionsFor, resolveSlot } from "./connections.mjs?v=1.22.1";
+import { connectionsFor, resolveSlot } from "./connections.mjs?v=1.27.0";
 import { installDesign, configureDesign, toggleDesign, toggleTheme, setDesignState, updateDesignBackend } from "./design.mjs?v=1.25.0";
 import { installStatusWidget, updateStatusWidget, finishedState, combineReports } from "./status.mjs";
 import { installUploadWidget, refreshUploadWidget } from "./upload.mjs?v=1.15.1";
@@ -362,5 +362,5 @@ app.registerExtension({
         };
     },
 });
-import './grimoire.mjs?v=1.22.1';
-import './foundry.mjs?v=1.26.1';
+import './grimoire.mjs?v=1.27.0';
+import './foundry.mjs?v=1.27.0';

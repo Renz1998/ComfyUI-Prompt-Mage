@@ -18,11 +18,11 @@ from ..dart.grimoire_prompt import response_contract, extract_response, response
 
 class PromptMageGrimoire(BaseNode):
     CATEGORY = 'Prompt Mage/Assistants'
-    DESCRIPTION = 'Persistent conversations with separate system/task/pinned instructions, optional appearance recipe and image references. History is saved as plaintext JSON on the ComfyUI server, outside workflows. Use a trusted server. Sending queues only a chat turn and required inputs. Use Spell Scroll for image generation.'
+    DESCRIPTION = 'Persistent conversations with separate system/task/pinned instructions, optional appearance recipe and image references. History is saved as plaintext JSON on the ComfyUI server, outside workflows. Use a trusted server. Sending queues only a chat turn and required inputs. Use Spell Scroll for a single applied prompt, or connect production_brief to Foundry and explicitly send an agreed production brief.'
     OUTPUT_NODE = False
     FUNCTION = 'chat'
-    RETURN_TYPES = ('STRING','STRING','STRING','STRING')
-    RETURN_NAMES = ('output','latest_response','memory_summary','report')
+    RETURN_TYPES = ('STRING','STRING','STRING','STRING','MAGE_PRODUCTION_BRIEF')
+    RETURN_NAMES = ('output','latest_response','memory_summary','report','production_brief')
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):
@@ -79,9 +79,9 @@ class PromptMageGrimoire(BaseNode):
             if action == 'Clear conversation':
                 state = dict(version=1, summary='', turns=[], settings=state.get('settings',{}))
                 save_memory(path, state)
-                return self.result(state, '', None, dict(status='cleared', note='History and summary cleared; configured instructions/pinned facts remain.'), ExecutionBlocker)
+                return self.result(state, '', None, dict(status='cleared', note='History and summary cleared; configured instructions/pinned facts remain.'), ExecutionBlocker,conversation_id)
             if action == 'Use latest':
-                return self.result(state,'',None,dict(status='chat-only',note='Use Spell Scroll to read an explicitly applied prompt.'),ExecutionBlocker)
+                return self.result(state,'',None,dict(status='chat-only',note='Use Spell Scroll to read an explicitly applied prompt.'),ExecutionBlocker,conversation_id)
             if summary_override.strip():
                 state['summary'] = summary_override.strip()
             if assistant_backend == 'OpenAI API':
@@ -135,7 +135,7 @@ class PromptMageGrimoire(BaseNode):
                         report['compacted'] = True
                 if action == 'Compact now':
                     save_memory(path, state)
-                    return self.result(state, '', None, report, ExecutionBlocker)
+                    return self.result(state, '', None, report, ExecutionBlocker,conversation_id)
                 ids = parse_attachment_ids(attachments)
                 files = [load_attachment(identifier) for identifier in ids]
                 if not current and files:current = 'Please review these attachments.'
@@ -201,12 +201,12 @@ class PromptMageGrimoire(BaseNode):
                     auto_compact=auto_compact, output_selection=output_selection, json_field=json_field,
                     chat_mode=chat_mode, style_preset=style_preset, style_notes=style_notes)
                 save_memory(path, state)
-                return self.result(state, latest, output, report, ExecutionBlocker)
+                return self.result(state, latest, output, report, ExecutionBlocker,conversation_id)
 
-    def result(self, state, latest, output, report, blocker):
+    def result(self, state, latest, output, report, blocker, conversation_id):
         report.update(turns=len(state['turns']), summary_chars=len(state['summary']))
         return {'ui': {'grimoire': [dict(turns=state['turns'], summary=state['summary'], settings=state.get('settings',{}), report=report)]},
-                'result': (output if output is not None else blocker('Grimoire: ' + report['status']), latest, state['summary'], json.dumps(report,ensure_ascii=False,indent=2))}
+                'result': (output if output is not None else blocker('Grimoire: ' + report['status']), latest, state['summary'], json.dumps(report,ensure_ascii=False,indent=2),{'conversation_id':conversation_id})}
 
 
 class PromptMageGrimoireTurn(PromptMageGrimoire):

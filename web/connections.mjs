@@ -6,6 +6,7 @@ const composers = (slot) => [node("ComposePromptV3", slot)];
 const generators = (slot) => [node("Generate", slot), node("GenerateAdvanced", slot)];
 
 export function connectionsFor(type, name, slotType, isOutput) {
+    if(slotType==='MAGE_PRODUCTION_BRIEF')return isOutput?[node('Foundry','production_brief')]:[node('Grimoire','production_brief')];
     if(type===prefix+'SpellScroll'){if(!isOutput&&['width','height'].includes(name))return [node('Resolution',name)];return isOutput?(name==='prompt'?[encode,preview]:[preview]):[];}
     if (type===prefix+'Grimoire') {
         if (!isOutput && ['width','height'].includes(name)) return [node('Resolution',name)];

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.27.0 — Grimoire production briefs
+
+- Adds a production_brief connection and explicit Send brief → Foundry action. A queued compiler extracts the latest agreed direction into an immutable snapshot without adding a chat turn or rendering images.
+- Imports creative direction, style, frame count, references and canvas choices into a new Foundry draft. Appearance transfers as a fallback; connected overrides take precedence. Models, keys, scoring and spending caps remain under Foundry control.
+- Protects active runs and stale conversations, retains earlier snapshots, and removes live chat dependencies from generation jobs. Includes a separate MOSS example and setup guide.
+
 ## 1.26.1 — Plan revisions and visible review progress
 
 - Keeps Preview plan in both the header and persistent bottom toolbar. Both are disabled once a plan is ready and throughout execution. Explicit Edit brief enables a new preview; Regenerate plan creates a new saved version before approval.

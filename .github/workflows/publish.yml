@@ -27,6 +27,7 @@ jobs:
       - run: node tests/test_archmage_ui.mjs
       - run: node tests/test_openai_key.mjs
       - run: node tests/test_foundry_ui.mjs
+      - run: node tests/test_foundry_references.mjs
   publish:
     needs: validate
     runs-on: ubuntu-latest

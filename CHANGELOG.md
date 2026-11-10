@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.24.0 — Automatic Foundry sequences and reference gallery
+
+- Approve once to start a bounded server-side render/review/retry/advance loop. It continues independently of the browser and stops at errors or configured limits; pause/resume and manual override remain available.
+- Restores the full Archmage style selector. Assistant choice is explicit; saved Grimoire chats are optional context under an expandable section.
+- Adds Relaxed/Balanced/Strict review tolerance, match/usability scores, must-have checks and an attempt picker. Acceptance is immediate without confirmation dialogs; Manual mode labels the next-frame action clearly.
+- Adds a numbered drag-and-drop image gallery with upload/folder selection, remove/clear/reorder and per-image outfit/pose/prop roles. Planning uses the actual reference images; no extra image sockets are created.
+- Suggests budgets for the entire script rather than retaining a three-render cap for longer templates. Includes controller, review and gallery regression tests and updated workflow notes.
+- Accepts structured optional reference notes from planners and reports the specific node/input when native workflow validation fails. A live two-frame DeepSeek/MOSS test completed automatic review and advancement on an RTX 3090.
+
 ## 1.23.0 — Foundry experimental production bench
 
 - Adds a separate Foundry panel with script templates, saved run history, editable shot lists, explicit plan approval and bounded attempts/calls.

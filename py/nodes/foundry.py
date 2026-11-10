@@ -2,6 +2,7 @@ import json
 from .base import BaseNode
 from ..dart import foundry as store
 from ..dart import foundry_ai as ai
+from ..dart.style_presets import STYLE_OPTIONS
 
 
 def ui(value,result):
@@ -10,7 +11,7 @@ def ui(value,result):
 
 class PromptMageFoundry(BaseNode):
     CATEGORY='Prompt Mage/Experimental'
-    DESCRIPTION='Experimental manual-gate production panel. Preview and approve a shot list, render one frame, review actual pixels, then accept/retry yourself. Separate server records; never changes Grimoire or Spell Scroll. Use panel buttons, not global Run.'
+    DESCRIPTION='Approve a plan once; Foundry renders, reviews with adjustable tolerance, retries and advances automatically on the server. Style presets, appearance and outfit/image references. Separate records; never changes Grimoire or Spell Scroll. Use panel buttons, not global Run.'
     FUNCTION='read';OUTPUT_NODE=False
     RETURN_TYPES=('STRING','INT','INT','INT','STRING','STRING','STRING','STRING')
     RETURN_NAMES=('prompt','width','height','seed','run_id','attempt_id','filename_prefix','report')
@@ -35,6 +36,14 @@ class PromptMageFoundry(BaseNode):
             'height':('INT',{'forceInput':True,'default':1024}),
             'clip':('CLIP',{'tooltip':'Shared native assistant encoder for Local Qwen. API runs skip this dependency.'}),
             'appearance':('ATELIER_APPEARANCE',{'tooltip':'Copied into a new plan. Enable selected replacements before previewing; approved runs freeze this recipe.'}),
+            'image':('IMAGE',{'tooltip':'Optional single planning connection (first image of a batch). Use the numbered drag-and-drop gallery for multiple references, up to 12 total.'}),
+            'style_preset':(STYLE_OPTIONS,{'default':'Photo · Bright lifestyle'}),
+            'style_notes':('STRING',{'default':'','multiline':True}),
+            'run_mode':(['Automatic','Manual'],{'default':'Automatic'}),
+            'review_tolerance':(['Relaxed','Balanced','Strict'],{'default':'Balanced'}),
+            'reference_instructions':('STRING',{'default':'Borrow only the requested outfit or objects. Keep character identity from Appearance Overrides.','multiline':True}),
+            'attachments':('STRING',{'default':'[]'}),
+            'reference_roles':('STRING',{'default':'{}'}),
         }}
 
     @classmethod
@@ -51,9 +60,10 @@ class PromptMageFoundryPlan(PromptMageFoundry):
     OUTPUT_NODE=True;DEPRECATED=True;CATEGORY='Prompt Mage/Internal';FUNCTION='prepare'
 
     def prepare(self,run_id,conversation_id='',template_id='single',brief='',shared_rules='',review_rules='',shot_count=1,
-                max_attempts=3,max_renders=3,max_calls=8,width=1024,height=1024,clip=None,appearance=None,assistant_profile=store.ASSISTANTS[0],**kwargs):
-        with store.LOCK:value=store.create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance,assistant_profile)
-        value=ai.plan(value,clip)
+                max_attempts=3,max_renders=3,max_calls=8,width=1024,height=1024,clip=None,appearance=None,assistant_profile=store.ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',run_mode='Automatic',review_tolerance='Balanced',reference_instructions='',attachments='[]',reference_roles='{}',**kwargs):
+        with store.LOCK:value=store.create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance,assistant_profile,style_preset,style_notes,review_tolerance,run_mode)
+        images=[(name,kwargs[name]) for name in ('image',*[f'image_{i}' for i in range(2,7)]) if kwargs.get(name) is not None]
+        value=ai.plan(value,clip,images,attachments,reference_instructions,reference_roles)
         from comfy_execution.graph import ExecutionBlocker
         return ui(value,tuple(ExecutionBlocker(None) for _ in self.RETURN_TYPES))
 
@@ -69,7 +79,7 @@ class PromptMageFoundryReviewSaved(PromptMageFoundry):
 
 class PromptMageFoundryReviewOutput(BaseNode):
     CATEGORY='Prompt Mage/Experimental';FUNCTION='inspect';OUTPUT_NODE=True
-    DESCRIPTION='Connect the final decoded image and Foundry run_id/attempt_id. Archives one actual image and reviews it using the run’s frozen assistant settings. Always waits for human acceptance; never queues another render.'
+    DESCRIPTION='Archives and reviews the final actual image using the frozen assistant/style and tolerance. In Automatic mode the server controller accepts suitable frames, retries or advances. This node itself never waits on a nested queue.'
     RETURN_TYPES=('IMAGE','STRING');RETURN_NAMES=('image','review')
 
     @classmethod

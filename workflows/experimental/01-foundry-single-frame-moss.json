@@ -1,5 +1,5 @@
 {
-  "id": "6c24fdce-8cdb-4148-ad6e-922dc650758b",
+  "id": "1702877f-1470-4bde-9f7a-9d506023a343",
   "revision": 0,
   "last_node_id": 152,
   "last_link_id": 245,
@@ -1036,7 +1036,7 @@
       "outputs": [],
       "properties": {},
       "widgets_values": [
-        "# Foundry · experimental single-frame test\nUse the Foundry panel buttons, not global Run. Your current Grimoire workflow is unchanged.\n\n1. Select an optional saved Grimoire chat to reuse its saved assistant/model/style and recent script context. Empty selection uses Local Qwen and the connected MOSS encoder; no API key is required.\nRecommended API: choose DeepSeek V4.1 Flash in Assistant model, then add/reuse your saved DeepSeek key in the panel. It uses deepseek-flash for both script planning and real-image review. V4 Pro is text-only and cannot review images. Official models: https://api-docs.deepseek.com/quick_start/pricing/ . Local Qwen remains the default; selecting a model does not send any request.\n2. Choose a template, write a brief, and leave Frames = 1 for the first test. Set budgets before previewing. The sample allows 3 render attempts and 8 assistant calls.\n3. Preview plan calls the assistant to draft the shot list. Edit its visible checks, then Approve plan. Approval itself is free of model calls.\n4. Render & review one frame compiles one native MOSS JSON prompt, runs this MOSS pipeline, archives the actual image, and asks the same selected assistant to review the pixels.\n5. Accept frame advances the run record only. Press Render again to make the next frame. Retry keeps the same prompt with a fresh seed. Review saved image retries a failed review without generating another image. No unattended loop.\n\nResolution drives the planned canvas and latent. Appearance Overrides is disabled by default; enable it before planning if desired. Approved runs freeze their appearance and assistant settings.\n\nRequired models and download links: https://github.com/Renz1998/ComfyUI-Prompt-Mage/blob/main/docs/MODEL_DOWNLOADS.md\nMOSS base: https://huggingface.co/OpenMOSS-Team/MOSS-Image\nKeep the accelerator LoRA, SLG and sampling settings supplied in the main workflow; there is no character LoRA here. Select your installed filenames in the loaders. Foundry requires current ComfyUI partial execution support and a vision-capable native encoder or API model.\n\nImages and run records are saved under ComfyUI user/prompt_mage/foundry. Keep this directory on persistent RunPod storage. Do not expose an unauthenticated ComfyUI server. Assistant calls may incur API charges. Reviews are advisory; you approve each image.\n\nPause/Stop does not interrupt someone else’s queued job. An already running image may finish. Cancel in ComfyUI’s queue if necessary, then use Recover interrupted job. See docs/FOUNDRY_EXPERIMENT.md for limits and testing.\n"
+        "# Foundry · experimental single-frame test\nUse Foundry: Preview plan, then Approve & start sequence. The controller runs on the server; no per-frame clicking is required.\n\n1. Select your assistant explicitly. Local Qwen uses the connected MOSS encoder. DeepSeek V4.1 Flash is the recommended API option and supports actual-image review; its saved-key panel appears when selected. V4 Pro is text-only.\n2. Choose a Style / theme, script template, brief, frame count and tries per frame. Budgets adjust to the count; review advanced limits before starting. Optional Grimoire chat references supply script context only.\n3. Drop outfit/pose/prop reference images into Planning images. Upload or choose a folder; use numbered cards and role selectors to tell the planner what to borrow. Up to 12 references including the optional single image connection. No extra image sockets are required.\n4. Preview plan calls the assistant. Edit the briefs and checks; prefix ! only on a must-have detail. Approve & start sequence starts automatic rendering and review on the server, even if the browser closes.\n5. Review tolerance allows useful variations: Relaxed, Balanced (default), Strict. Match/usability scores are AI judgments, not exact measurements. Suitable frames are accepted and the next frame starts. Unsuitable frames retry with a fresh seed up to the limits.\n6. Retry exhaustion, provider errors and budget limits pause for attention. Inspect attempts and Accept & continue directly, without confirmation dialogs. Pause/Resume and Stop are always available. Manual mode is optional; after acceptance its button reads Render & review next frame.\nResolution drives the planned canvas and latent. Appearance Overrides is disabled by default; enable it before planning if desired. Approved runs freeze their appearance and assistant settings.\n\nRequired models and download links: https://github.com/Renz1998/ComfyUI-Prompt-Mage/blob/main/docs/MODEL_DOWNLOADS.md\nMOSS base: https://huggingface.co/OpenMOSS-Team/MOSS-Image\nKeep the accelerator LoRA, SLG and sampling settings supplied in the main workflow; there is no character LoRA here. Select your installed filenames in the loaders. Foundry requires current ComfyUI partial execution support and a vision-capable native encoder or API model.\n\nImages and run records are saved under ComfyUI user/prompt_mage/foundry. Keep this directory on persistent RunPod storage. Do not expose an unauthenticated ComfyUI server. Assistant calls may incur API charges. Reviews are fallible; the server applies your selected tolerance and pauses on errors or limits.\n\nPause/Stop does not interrupt someone else’s queued job. An already running image may finish. Cancel in ComfyUI’s queue if necessary, then use Recover interrupted job. See docs/FOUNDRY_EXPERIMENT.md for limits and testing.\n"
       ]
     },
     {
@@ -1072,7 +1072,14 @@
         3,
         8,
         "",
-        "From chat / Local Qwen"
+        "Local Qwen",
+        "Photo · Bright lifestyle",
+        "",
+        "Automatic",
+        "Balanced",
+        "Borrow only the requested outfit or objects. Keep character identity from Appearance Overrides.",
+        "[]",
+        "{}"
       ],
       "mage_foundry_fields": {
         "run_id": "",
@@ -1086,7 +1093,14 @@
         "max_renders": 3,
         "max_calls": 8,
         "attempt_id": "",
-        "assistant_profile": "From chat / Local Qwen"
+        "assistant_profile": "Local Qwen",
+        "style_preset": "Photo · Bright lifestyle",
+        "style_notes": "",
+        "run_mode": "Automatic",
+        "review_tolerance": "Balanced",
+        "reference_instructions": "Borrow only the requested outfit or objects. Keep character identity from Appearance Overrides.",
+        "attachments": "[]",
+        "reference_roles": "{}"
       },
       "inputs": [
         {
@@ -1111,6 +1125,12 @@
           "name": "appearance",
           "type": "ATELIER_APPEARANCE",
           "link": 231,
+          "shape": 7
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": null,
           "shape": 7
         }
       ],
@@ -1463,7 +1483,7 @@
   ],
   "groups": [
     {
-      "title": "EXPERIMENTAL · Foundry · manual approval after each frame",
+      "title": "EXPERIMENTAL · Foundry · automatic render / review sequence",
       "bounding": [
         -1100,
         -970,

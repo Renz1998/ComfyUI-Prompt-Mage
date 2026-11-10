@@ -40,3 +40,17 @@ class FoundryRouteTests(unittest.IsolatedAsyncioTestCase):
             r=await self.call('reserve_review',attempt_id='b'*32);self.assertEqual(r.status,200)
             r=await self.call('reserve_review',attempt_id='b'*32);self.assertEqual(r.status,400)
         gen.assert_not_called();self.assertEqual(store.read(self.id)['usage']['renders'],0)
+    async def test_approve_once_starts_server_controller_without_browser_loop(self):
+        from test_foundry_runner import workflow
+        from dart_plugin.py.dart import foundry_runner as runner
+        value=self.create();value.update(status='plan_ready',plan=store.validate_plan({'title':'Inn','shots':[{'title':'Map','brief':'Traveler with map','criteria':['Map visible']}]},1));store.write(value)
+        with patch.object(runner,'start') as start:
+            response=await self.call('approve_start',job=workflow(),node_id='1',client_id='client')
+        self.assertEqual(response.status,200);result=(await response.json())['run'];self.assertTrue(result['approved']);self.assertTrue(result['automation_enabled']);start.assert_called_once()
+        self.assertTrue(runner.recipe_path(self.id).exists())
+    async def test_manual_approval_does_not_launch_controller(self):
+        from test_foundry_runner import workflow
+        from dart_plugin.py.dart import foundry_runner as runner
+        value=self.create();value.update(status='plan_ready',run_mode='Manual',plan=store.validate_plan({'title':'Inn','shots':[{'title':'Map','brief':'Traveler with map','criteria':['Map visible']}]},1));store.write(value)
+        with patch.object(runner,'start') as start:response=await self.call('approve_start',job=workflow(),node_id='1')
+        self.assertEqual(response.status,200);start.assert_not_called()

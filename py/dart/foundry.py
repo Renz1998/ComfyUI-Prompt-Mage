@@ -1,4 +1,4 @@
-"""Experimental manual-gate production runs; independent of chat and Spell Scroll."""
+"""Persistent production runs; independent of chat and Spell Scroll."""
 import copy
 import json
 import re
@@ -9,7 +9,7 @@ import uuid
 from pathlib import Path
 
 LOCK = threading.RLock()
-ASSISTANTS=('From chat / Local Qwen','DeepSeek V4.1 Flash · Recommended · Text + images')
+ASSISTANTS=('Local Qwen','DeepSeek V4.1 Flash · Recommended · Text + images','From chat / Local Qwen')
 BUILTINS = {
     'single': dict(name='Single scene test', brief='An adult traveler in a green wool cloak studies a map in a lantern-lit wooden inn.', shared_rules='Keep the chosen character, medium and canvas consistent.', review_rules='Check the requested action, major props and camera logic.', shot_count=1),
     'carousel': dict(name='Holiday carousel', brief='Plan a holiday photo carousel with varied framing and a clear opening, quieter middle and closing frame.', shared_rules='Keep the chosen palette and light treatment. Allow planned outfit and location changes.', review_rules='Check each shot against its own brief. Allow deliberate close-ups and planned variations.', shot_count=7),
@@ -70,7 +70,11 @@ def validate_plan(value,expected_count):
         if not isinstance(criteria,list) or not 1<=len(criteria)<=8:raise ValueError('Each shot needs 1–8 observable review criteria.')
         result.append(dict(id='shot-'+str(index+1),title=text(shot.get('title'),'Shot title',120),
             brief=text(shot.get('brief'),'Shot brief',6000),criteria=[text(c,'Review criterion',400) for c in criteria]))
-    return dict(title=title,shots=result)
+    plan=dict(title=title,shots=result)
+    notes=value.get('reference_notes')
+    if isinstance(notes,(dict,list)):notes=json.dumps(notes,ensure_ascii=False)
+    if isinstance(notes,str) and notes.strip():plan['reference_notes']=notes.strip()[:12000]
+    return plan
 
 
 def templates():
@@ -104,18 +108,24 @@ def source_settings(conversation_id):
     return config,context
 
 
-def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance=None,assistant_profile=ASSISTANTS[0]):
+def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance=None,assistant_profile=ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',review_tolerance='Balanced',run_mode='Automatic'):
     from .moss import canvas_size
     checked_id(run_id);canvas_size(width,height)
     if any(isinstance(n,bool) or not isinstance(n,int) for n in (shot_count,max_attempts,max_renders,max_calls)):
         raise ValueError('Run limits must be whole numbers.')
     if not 1<=shot_count<=24 or not 1<=max_attempts<=10 or not 1<=max_renders<=100 or not 1<=max_calls<=100:raise ValueError('Run limits are out of range.')
+    if max_renders<shot_count or max_calls<1+2*shot_count:raise ValueError('Budgets must allow at least one render and two assistant calls per frame, plus planning. Use the suggested budgets.')
+    if review_tolerance not in ('Relaxed','Balanced','Strict') or run_mode not in ('Automatic','Manual'):raise ValueError('Choose a valid review tolerance and run mode.')
     if run_path(run_id).exists():raise ValueError('Run already exists. New plans use a new run ID.')
     selected=template(template_id);config,context=source_settings(conversation_id)
     if assistant_profile not in ASSISTANTS:raise ValueError('Choose a supported Foundry assistant preset.')
+    if assistant_profile=='Local Qwen':config.update(assistant_backend='Local Qwen',local_model='Automatic')
     if assistant_profile==ASSISTANTS[1]:
         from .deepseek_assistant import DEFAULT_MODEL
         config.update(assistant_backend='DeepSeek API',deepseek_model=DEFAULT_MODEL)
+    from .style_presets import resolve_style
+    resolved,_=resolve_style(style_preset,style_notes,secrets.randbelow(2**32))
+    config.update(style_preset=resolved,style_notes=style_notes)
     if config['assistant_backend']=='DeepSeek API':
         from .deepseek_assistant import MODELS, DEFAULT_MODEL
         if MODELS.get(config.get('deepseek_model',DEFAULT_MODEL))!='deepseek-flash':
@@ -124,6 +134,7 @@ def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,sh
         template=template_id,assistant_profile=assistant_profile,brief=text(brief or selected['brief'],'Brief'),shared_rules=shared_rules[:8000],review_rules=review_rules[:8000],
         shot_count=shot_count,width=width,height=height,appearance=copy.deepcopy(appearance),
         limits=dict(attempts=max_attempts,renders=max_renders,calls=max_calls),usage=dict(renders=0,calls=0),
+        run_mode=run_mode,review_tolerance=review_tolerance,automation_enabled=False,
         plan=None,current=0,attempts=[],compiled={},accepted=[],last_error='')
     receipt=root()/'jobs'/(run_id+'.json')
     if receipt.exists():
@@ -179,10 +190,12 @@ def action(run_id,operation,data=None):
             if value['status']!='plan_ready':raise ValueError('Preview a plan before approving it.')
             value['plan']=validate_plan(data.get('plan',value['plan']),value['shot_count']);value.update(approved=True,status='ready')
         elif operation=='accept':
-            if value['status']!='awaiting_approval':raise ValueError('Review a generated image before accepting it.')
+            if value['status'] not in ('awaiting_approval','needs_attention'):raise ValueError('Review a generated image before accepting it.')
             attempt=attempt_for(value,data.get('attempt_id',''))
             if attempt['shot_id']!=value['plan']['shots'][value['current']]['id'] or not attempt.get('review'):raise ValueError('Choose a reviewed attempt for the current frame.')
-            value['accepted'].append(dict(shot_id=attempt['shot_id'],attempt_id=attempt['id']));attempt['status']='accepted';value['current']+=1
+            value['accepted'].append(dict(shot_id=attempt['shot_id'],attempt_id=attempt['id'],automatic=bool(data.get('automatic',False))));attempt['status']='accepted';value['current']+=1
+            value['last_error']=''
+            value.pop('last_decision',None)
             value['status']='complete' if value['current']==len(value['plan']['shots']) else 'ready'
         elif operation=='pause':
             if value['status'] in ('complete','stopped','paused'):raise ValueError('This run has ended or is already paused.')
@@ -208,6 +221,6 @@ def action(run_id,operation,data=None):
 
 
 def public(value):
-    result={key:copy.deepcopy(v) for key,v in value.items() if key not in ('context','appearance','compiled')}
+    result={key:copy.deepcopy(v) for key,v in value.items() if key not in ('context','appearance','compiled','reference_context')}
     result['assistant']=value['config'].get('assistant_backend','Local Qwen')
     return result

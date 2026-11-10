@@ -1,67 +1,73 @@
-# Foundry · experimental production bench
+# Foundry · automated production bench
 
-Foundry turns a brief or a saved Grimoire script into an approved shot list, then lets you generate and review **one actual image at a time**. It is a separate experiment. Your Grimoire chats, applied Spell Scroll prompts and existing workflows stay independent.
+**Preview a script, approve it once, then Foundry renders → reviews → retries or accepts → moves to the next frame.** The controller runs on the ComfyUI server, independently of the browser. Your existing Grimoire chats and applied Spell Scroll prompts are separate.
 
-**[Download the testing workflow](../workflows/experimental/01-foundry-single-frame-moss.json)** · [Model downloads](MODEL_DOWNLOADS.md)
+**[Testing workflow](../workflows/experimental/01-foundry-single-frame-moss.json)** · [Model downloads](MODEL_DOWNLOADS.md)
 
-## First test
+## Start a sequence
 
-1. Update Prompt Mage, restart ComfyUI when convenient, refresh the browser and open the testing workflow. Select your installed MOSS model filenames. The accelerator LoRA and sampling settings come from the main workflow; no character LoRA is included.
-2. Leave the assistant source empty for **Local Qwen** using the shared encoder. Or select a saved Grimoire chat: Foundry copies that chat’s saved provider, model, thinking, visual style and recent context. OpenAI/DeepSeek use their existing server-saved keys. The selected model must support image input and native text generation. Unsupported models fail visibly; Foundry never silently switches paid providers.
-3. Leave **Frames = 1**. The default caps are three tries per frame, three total render attempts and eight assistant calls. These count attempts, not a price guarantee. Increase them deliberately for a longer script.
-4. Choose a template and write the brief. **Keep consistent** describes continuity. **Reviewer checks** describes what success should look like. Appearance Overrides is optional and disabled in the sample; enable selected replacements before planning.
-5. Click **Preview plan**. Inspect and edit every frame’s brief and observable checks, then **Approve plan**. Approval makes no model call. It freezes the assistant settings, appearance recipe, canvas, plan and budgets for this run.
-6. Click **Render & review one frame**. Foundry writes a native MOSS JSON prompt, runs the connected image pipeline, archives the decoded image and sends those actual pixels to the same selected assistant for review.
-7. Inspect the image and evidence. **Accept frame** records your choice and advances the frame counter; it does **not** render the next frame. Press Render again when ready. **Retry · fresh seed** keeps the same compiled prompt and changes the seed. Reviewer suggestions are displayed, never automatically applied.
+1. Open the separate testing workflow. Select your installed MOSS filenames. The supplied accelerator LoRA and sampling settings come from the main workflow; there is no character LoRA. Leave latent batch size at one.
+2. Choose **Style / theme** and **Assistant model** explicitly. The full Archmage photo/anime/illustration presets and custom notes are available. Local Qwen uses the connected native encoder. DeepSeek V4.1 Flash is the recommended API option; selecting it opens the existing persistent-key panel. Selecting options makes no AI request.
+3. Choose a script template and write the brief. Set **Frames** and **Tries per frame**. Foundry suggests total render/call limits for that count; inspect or change them under **Advanced · spending limits**. Seven frames no longer inherit a three-render cap. A new plan must allow at least one render and two assistant calls per frame, plus planning.
+4. Add optional **Planning images**. Drop images into the gallery, upload files, or choose a local folder—even on RunPod. Numbered thumbnails preserve your order; use the arrows to reorder, × to remove, and Clear to empty the gallery. Select a role under each image: outfit, pose, props, setting, visual style or character. **What should we borrow?** gives additional instructions, such as “Image 1: use only the outfit; keep my character.” Up to twelve images are supported across the gallery and optional single image socket. There are no growing rows of image sockets.
+5. **Optional · borrow context from a Grimoire chat** supplies recent script ideas. This is not the assistant/model selector and does not replace your selected style. Leave it empty if unnecessary. Appearance Overrides controls your selected character traits and takes priority over borrowed identity details.
+6. Click **Preview plan**. Edit the briefs and observable checks. Prefix a check with **!** only when it is genuinely non-negotiable, such as “! The red cloak is visible.” Ordinary details can vary within your tolerance.
+7. Click **Approve & start sequence**. Foundry freezes the plan, style, assistant settings, appearance recipe, resolution, tolerance, limits and connected generation graph. It automatically processes one image at a time and saves every attempt. Closing the browser does not stop it while the ComfyUI server remains running.
 
-**Recommended DeepSeek model:** choose **DeepSeek V4.1 Flash · Recommended · Text + images** in Foundry’s **Assistant model** dropdown. The key panel appears below it; add a key once or reuse the server-saved DeepSeek key. This explicit preset overrides the selected chat’s provider/model, keeping its script context and visual style. All three stages use `deepseek-flash`. Local Qwen remains the default; selection alone sends no AI request.
+**Automatic** is the default. **Manual** remains available under After plan approval; it stops after each review. Manual acceptance has no confirmation dialog, and the next button reads **Render & review next frame**. Normal global Run does not reserve a new attempt; use Foundry’s panel.
 
-The official [model table](https://api-docs.deepseek.com/quick_start/pricing/) and [vision guide](https://api-docs.deepseek.com/guides/vision/) checked November 10, 2026 identify `deepseek-flash` as V4.1 Flash with image input. V4 Pro does not support vision, so Foundry rejects it before planning spends calls. Legacy V4 Flash/Vision-Exp names route to the current Flash model; the preset uses the current API ID. Provider aliases, rates and policies may change.
+## Review tolerance
 
-Use Foundry’s panel buttons rather than global Run. The sample wires Foundry’s prompt, seed, dimensions and run IDs into the pipeline. A normal global Run cannot reserve a fresh attempt. Exactly one **Foundry · Review Output** must receive the final decoded image and the matching run/attempt IDs. Latent batch size must be one.
+The reviewer inspects the actual decoded image. It scores each approved check and the image’s visible usability, with evidence. Foundry computes prompt match from those checks and applies the selected policy on the server.
 
-## Templates and saved work
+| Tolerance | Average prompt match | Minimum individual check | Image usability |
+| --- | --- | --- | --- |
+| Relaxed | 65/100 | 35/100 | 55/100 |
+| Balanced (default) | 75/100 | 50/100 | 65/100 |
+| Strict | 90/100 | 75/100 | 80/100 |
 
-Built-in starting points: single scene, holiday carousel, character lookbook, storyboard and product campaign. They describe a structure, not a fixed character or story. A selected Grimoire conversation supplies creative context; the new brief and approved shot list take priority over older summaries.
+These are **AI judgments, not measured similarity or confidence probabilities**. Balanced accepts useful differences in pose angles, folds, small props and background placement. A clearly major visible defect blocks automatic acceptance. A **! must-have** must be visibly present and pass with at least 70/100. Uncertain or failed checks cannot be inflated by a contradictory high numerical score.
 
-After approval, expand **Save this approved plan as a template**. Reusing its unchanged brief and frame count copies the saved plan without calling the planner. Change the brief to request a new plan. A template does not save API keys, conversation history or the appearance recipe; select those for the new run.
+If an image meets tolerance, it is accepted and the next frame is queued. Otherwise Foundry retries the same prompt with a fresh seed, within the frame and global limits. It does not silently rewrite your approved scene. After exhausted retries, it pauses for attention; it does not automatically accept a bad frame or extend its budget.
 
-Saved runs reopen from the picker. Refreshing, opening a run, editing the plan, approving, accepting and saving templates make no AI requests. The panel size is saved with the workflow.
+Inspect any attempt using the attempt picker. **Accept & continue** accepts the selected reviewed attempt immediately and continues the sequence—no “are you sure?” question. This is also how you override an overly strict reviewer. In Manual mode, Accept only advances the record; Render & review next frame starts the next image.
 
-## Review and recovery
+## References, templates and persistence
 
-The reviewer must assess each approved check as **pass**, **fail** or **uncertain**, with visible evidence. Foundry derives the overall verdict from those checks. Cropped or obscured details should be uncertain. Reviews can still be wrong: use your eyes, and accept a non-passing image explicitly if it is right for the project.
+Image roles and the borrowing instructions accompany the planner’s request. Vision APIs receive the planning images directly. Local Qwen describes each image first, which adds one assistant call per reference; the descriptions and planned outfit details persist for later prompt compilation. The planner must turn borrowed details into concrete shot briefs rather than writing only “same as reference.” References do not get re-analysed on every retry.
 
-If visual review fails after generation, the captured PNG remains saved. **Review saved image** spends another assistant call but does not run diffusion again. Invalid JSON and provider failures stop visibly without automatic retries. Failed API requests can still be billable.
+Gallery uploads use the same server-owned attachment store as Grimoire. Files go to the ComfyUI server; images are subsequently sent to the selected API provider only when you request planning. Key values never enter the workflow. Gallery file IDs and roles are saved with it; they require the same persistent server data to reopen.
 
-**Pause/Stop** stops further work on this run. It does not interrupt unrelated ComfyUI jobs. An image or API request already in progress may finish; a completed image is retained. Cancel an active job in ComfyUI’s queue if needed. Once it has left the queue, **Recover interrupted job** moves the record to a state where you can review its saved image or reserve another attempt. A failed planning job needs a new plan. Stop is final for that run.
+Built-in templates include a single scene, holiday carousel, character lookbook, storyboard and product campaign. Save an approved plan as a reusable template from its expandable section. Reusing an unchanged saved plan without new references skips the planning call. Templates do not embed API keys or chat history.
 
-## How it works
+Runs, reviews and frozen prompts live under **ComfyUI user/prompt_mage/foundry/runs**. Actual PNG attempts live under **foundry/images**; the full reviewed image is retained while only the vision copy is resized to one megapixel. Frozen workflow snapshots live under **foundry/jobs**. Keep this directory and Grimoire’s attachment/credential storage on persistent RunPod storage. These are private plaintext server records; protect server access.
+
+## Pause, errors and recovery
+
+**Pause** prevents the next submission; a current render/API call may finish. **Resume sequence** continues from saved progress and can review an already captured image without running diffusion again. **Stop** ends the run. These controls never globally interrupt someone else’s ComfyUI job. Cancel a current image through ComfyUI’s queue if needed.
+
+Provider errors, malformed replies, cancellation, exhausted retries and spending limits stop with a visible explanation. There are no automatic retries of failed API requests. **Review saved image** can retry an unfinished review without another render. Already submitted requests may still be billable. A server restart is different from closing the browser: reopen the saved run and resume/recover it explicitly; jobs lost from ComfyUI’s queue are not silently replayed.
+
+## Architecture and validation
 
 ```mermaid
 flowchart LR
-    A[Brief / saved chat / template] --> B[Preview shot list]
-    B --> C[Human approval]
-    C --> D[Reserve one attempt]
-    D --> E[Compile MOSS prompt]
-    E --> F[Render and archive actual image]
-    F --> G[Visual review]
-    G --> H{Human decision}
-    H -->|Accept| I[Advance record; wait]
-    H -->|Retry| D
-    H -->|Pause / stop| J[Keep saved work]
+    A[Brief + style + references] --> B[Editable shot list]
+    B --> C[Approve once]
+    C --> D[Server controller reserves attempt]
+    D --> E[Native partial graph execution]
+    E --> F[Archive actual image and score review]
+    F --> G{Within tolerance?}
+    G -->|Yes| H[Accept and advance]
+    H -->|Frames remain| D
+    G -->|No, tries remain| D
+    G -->|Limit or error| I[Pause for attention]
 ```
 
-- **Durable controller:** JSON run records under `ComfyUI user/prompt_mage/foundry/runs`. Approved plans and per-frame compiled prompts are frozen separately from Grimoire. Attempt IDs distinguish duplicate/cached graph executions. A server lock makes reservation and budget checks atomic.
-- **Bounded workers:** one planning call; one composition call per new frame; one visual review per attempt. Retries reuse the frame prompt. Calls are charged to the run before provider execution. No hidden repair calls, self-rewriting prompts or automatic acceptance.
-- **Queue boundary:** native ComfyUI partial execution retains the full graph for cache stability but targets only the requested worker or explicitly paired review/image-save outputs. It never queues a nested graph while waiting inside an executing node. Opening the UI does not start jobs.
-- **Actual-image capture:** Review Output archives one PNG under `foundry/images/<run>/<attempt>.png` before review, then downsizes only the review copy to a one-megapixel budget. Saved image dimensions are not changed. Keep RunPod’s ComfyUI user directory on persistent storage.
-- **Separation:** source settings and recent context are copied once. Grimoire messages, compacted memory and Spell Scroll approval are not modified. Run records contain prompts, context and reviews in plaintext; use a trusted private server. API keys remain in the existing credential store and never enter the workflow or template.
+The server controller uses ComfyUI’s native prompt validation and queue/history primitives, submitting a new job only after the prior job has finished. It keeps the complete graph for cache stability but targets only the explicitly paired review/image saver. No execution node waits on a nested queued graph. Reservations and budget updates are atomic; duplicate starts share one controller task per run. The browser displays server events and never drives the automatic loop.
 
-## Current limits
+Tests cover automatic multi-frame completion without browser callbacks, fresh-seed retries, tolerance policies, must-haves, limits, cancellation, pause/stop, duplicate starts, saved-image review, reference roles, image forwarding and gallery persistence. Automated tests mock AI/diffusion; the component preview uses fixture data.
 
-This is a **manual production bench**, not an unattended agent. There is no automatic next-frame loop, semantic prompt rewriting, cross-frame image comparison or resumable diffusion checkpoint. Closing the browser does not cancel a job already queued. After completion, reopening the panel reads the saved result; it does not launch the next frame. One server’s stored run IDs are not portable to a fresh pod without its persistent user directory.
+A live two-frame smoke test also completed on an RTX 3090 using ComfyUI 0.42.0, MOSS base, custom LoRAs and `res_2s` at 1728 × 2144. DeepSeek Flash borrowed a teal shirt from a supplied image, composed both prompts, reviewed the actual outputs and automatically accepted/advanced through both frames: two renders, five assistant calls. The reviewer's match scores were 92 and 90, with usability 88 for each. These scores are subjective, and one successful sequence is not a quality benchmark. Live rejected-frame retries and RunPod deployment remain unverified; those control paths have automated test coverage. Inspect early results before committing a long sequence.
 
-Local Qwen generation and MOSS diffusion may compete for VRAM. Foundry adds no forced model-unload step; ComfyUI still manages memory. Performance depends on the shared encoder, installed model and hardware. The sample keeps the main workflow’s MOSS base/accelerator settings; file installation requirements still apply.
-
-Validation covers state transitions, budgets, saved-image recovery, JSON contracts, queue targets and workflow wiring with mocked AI providers. The component preview uses fixture data. This release has **not** been validated by a paid API production run, a full GPU image run or deployment on RunPod.
+DeepSeek’s [official model table](https://api-docs.deepseek.com/quick_start/pricing/) and [vision guide](https://api-docs.deepseek.com/guides/vision/) identify `deepseek-flash` as the V4.1 Flash image-capable API option. V4 Pro is text-only; Foundry rejects it for automatic image review. Provider aliases and pricing may change.

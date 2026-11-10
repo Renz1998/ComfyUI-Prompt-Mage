@@ -7,6 +7,7 @@ export function foundryPrompt(snapshot,nodeId,operation,{runId,attemptId='',remo
     if(graph[id]?.class_type!==FOUNDRY)throw Error('Foundry is disabled or missing.');
     graph[id].inputs.run_id=runId;graph[id].inputs.attempt_id=attemptId;
     if(remote)delete graph[id].inputs.clip;
+    if(operation==='review_saved')for(const key of Object.keys(graph[id].inputs))if(key==='image'||key.startsWith('image_')||key==='attachments')delete graph[id].inputs[key];
     function ancestors(key,seen=new Set(),stack=new Set()) {
         key=String(key);if(stack.has(key))throw Error('Foundry input cycle.');if(seen.has(key))return seen;
         if(!graph[key])throw Error('Missing workflow input '+key);stack.add(key);seen.add(key);
@@ -18,6 +19,7 @@ export function foundryPrompt(snapshot,nodeId,operation,{runId,attemptId='',remo
         if([...ancestors(id)].some(key=>/KSampler|SamplerCustom|SaveImage|SaveVideo/.test(graph[key].class_type)))throw Error('Planning inputs must not depend on image generation.');
         graph[id].class_type=FOUNDRY+(operation==='plan'?'Plan':'ReviewSaved');
     } else if(operation==='render') {
+        for(const key of Object.keys(graph[id].inputs))if(key==='image'||key.startsWith('image_')||key==='attachments')delete graph[id].inputs[key];
         const sinks=Object.entries(graph).filter(([,n])=>n.class_type===REVIEW&&link(n.inputs.run_id,id,4)&&link(n.inputs.attempt_id,id,5));
         if(sinks.length!==1)throw Error('Connect exactly one Foundry Review Output to this node’s run_id and attempt_id.');
         const [sinkId,sink]=sinks[0];if(remote)delete sink.inputs.clip;

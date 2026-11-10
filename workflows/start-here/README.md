@@ -1,6 +1,6 @@
 # Start here
 
-Testing the new script-to-image bench? Use the separate [Foundry experimental workflow](../experimental/README.md). It waits for your approval after each actual-image review.
+Testing the script-to-image bench? Use the separate [Foundry experimental workflow](../experimental/README.md). Approve a plan once, then let it render/review/retry and advance with your selected tolerance.
 
 Drag one JSON file into ComfyUI. **Start with 03 for the full DART v3 → Archmage → MOSS workflow.** 01 and 02 make prompts. [Download model files first](../../docs/MODEL_DOWNLOADS.md).
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.26.1 — Plan revisions and visible review progress
+
+- Keeps Preview plan in both the header and persistent bottom toolbar. Both are disabled once a plan is ready and throughout execution. Explicit Edit brief enables a new preview; Regenerate plan creates a new saved version before approval.
+- Keeps approval, regeneration and brief editing beside each other at the bottom. Adds a captured planning-settings overview with model, style, canvas, score, limits, mode and reference count.
+- Broadcasts the saved-image review stage before calling the API, so waiting on a vision review no longer looks like a stuck renderer.
+
 ## 1.26.0 — Passing scores, uninterrupted sequences and provider choice
 
 - Adds an adjustable overall passing score (recommended 80): 40% prompt match, 25% usability, 35% physical inspection. The first passing try advances immediately; major visible defects and must-have checks remain hard stops for that image.

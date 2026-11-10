@@ -254,6 +254,14 @@ def review(run_id,attempt_id,image=None,clip=None):
             if current['status'] in ('stopped','paused'):return current
             if current['status'] not in ('rendering','reviewing','needs_attention'):raise ValueError('This run is not ready for review.')
             current['status']='reviewing';store.write(current)
+        # Publish the saved-image/review stage before the potentially slow provider call.
+        try:
+            from server import PromptServer
+        except ImportError:pass
+        else:
+            if getattr(PromptServer,'instance',None) is not None:
+                from .foundry_runner import notify
+                notify(PromptServer.instance,current)
         prepared,view_labels=review_views(image,value['config']['assistant_backend'])
         system='''You are Foundry's technical image inspector. FIRST inspect the ACTUAL pixels for anatomy and physical scene coherence, THEN assess prompt match. Attractive lighting, a pretty face and correct props do not make a broken image acceptable.
 Return one JSON object. Include visual_integrity BEFORE checks:

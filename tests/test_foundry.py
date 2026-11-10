@@ -48,6 +48,15 @@ class FoundryTests(unittest.TestCase):
         result=store.action(self.id,'accept',{'attempt_id':attempt['id']})
         self.assertEqual(result['status'],'complete');self.assertEqual(result['usage']['renders'],1)
         with self.assertRaises(ValueError):store.reserve(self.id)
+    def test_saved_image_review_stage_is_published_before_provider_wait(self):
+        attempt,_,_=self.composed();events=[]
+        server=SimpleNamespace(instance=SimpleNamespace(send_sync=lambda name,payload:events.append(payload)))
+        def answer(*args,**kwargs):
+            self.assertEqual(events[-1]['foundry'][0]['status'],'reviewing')
+            self.assertTrue(events[-1]['foundry'][0]['attempts'][-1]['image'])
+            return self.review_json()
+        with patch.dict(sys.modules,{'server':SimpleNamespace(PromptServer=server)}),patch.object(ai,'generate',side_effect=answer):
+            ai.review(self.id,attempt['id'],torch.zeros(1,16,16,3))
     def test_retry_preserves_prompt_changes_seed_and_has_no_composition_call(self):
         attempt,prompt,_=self.composed()
         with patch.object(ai,'generate',return_value=self.review_json('fail')):ai.review(self.id,attempt['id'],torch.zeros(1,16,16,3))

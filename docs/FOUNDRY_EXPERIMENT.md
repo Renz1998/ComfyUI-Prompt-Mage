@@ -89,3 +89,11 @@ DeepSeek’s [official model table](https://api-docs.deepseek.com/quick_start/pr
 A bounded physical-inspection audit used two existing outputs without running diffusion again. The first rubric still accepted ambiguous clothing geometry and over-flagged the control. After calibration, the revised reviewer rejected the ambiguous garment construction and accepted the control. This is a small development check, not a reliability benchmark; model judgments vary and can still miss defects.
 
 The 1.26 OpenAI smoke test used GPT-6.1 Terra on a two-frame cafe carousel at 1728 × 2144. Preview plan produced zero image attempts. After one approval, the server rendered/reviewed/accepted both frames on their first tries, with overall scores 94 and 86: two renders, five assistant calls, no extra approvals. A separate short request also verified GPT-6.1 Sol connectivity. Gemini has request, image forwarding, key isolation and failure tests but was not live-tested without a configured Gemini key.
+
+## Plan versions and visible progress
+
+Preview plan appears in the header and persistent bottom action bar. Both are disabled once a preview is ready. Use **Regenerate plan** for another interpretation of the same planning inputs, or **Edit brief** to adjust inputs before explicitly previewing again. The previous run record stays saved; these actions do not approve or render images. **Cancel editing** returns to the existing preview. Approved plans stay frozen; use New plan after the sequence finishes or is stopped to begin another project.
+
+The captured **Planning settings** overview shows model, style, canvas, run mode, score, physical policy, frame/try counts, spending caps, failure policy and reference count. Expand Brief and planning instructions to inspect the original direction. Header and footer previews remain disabled during processing.
+
+When the decoded image is saved, the panel updates to **Reviewing saved image · waiting for [provider]** before the API call. It shows the actual image while review is pending, instead of continuing to show the reserved/rendering state. Active runs also refresh their status every five seconds, repainting only when the server record changes. API reviews may take longer than a render; provider timeouts still stop with a saved-image recovery path.

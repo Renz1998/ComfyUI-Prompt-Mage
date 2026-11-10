@@ -113,8 +113,8 @@ class GrimoireTests(unittest.TestCase):
         layout=dict(summary=dict(meta=['photo'],canvas='single',caption='A red mug on a table.'),items=[dict(label='object',caption='Red mug',bbox=[-200,-200,200,200])],bbox_coord_space='abs_centralized',bbox_format='yxyx')
         value,execute=self.call(replies=(json.dumps(layout),),message='Mug',chat_mode='Prompt workshop',output_selection='MOSS JSON layout',width=1728,height=2144,style_preset='Photo · Bright lifestyle')
         prompt=execute.call_args.kwargs['system_prompt']
-        self.assertIn('ABSOLUTE CENTERED PIXELS',prompt)
-        self.assertIn('1728 x 2144',prompt)
+        self.assertIn('TOP-LEFT PIXELS',prompt)
+        self.assertIn('width=1728, height=2144',prompt)
         self.assertIn('Bright lifestyle',prompt)
         self.assertEqual(json.loads(value['result'][0]),layout)
         self.assertTrue(read_memory(memory_path('chapter-1234'))['turns'][-1]['valid'])

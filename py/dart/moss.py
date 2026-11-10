@@ -44,7 +44,9 @@ def compile_layout(layout, width, height, draft=False):
             raise ValueError(prefix + " bbox needs four finite numbers.")
         if draft:
             x1, y1, x2, y2 = box
-            box = [y1 - height / 2, x1 - width / 2, y2 - height / 2, x2 - width / 2]
+            if not (0 <= x1 < x2 <= width and 0 <= y1 < y2 <= height):
+                raise ValueError(prefix + ' draft bbox is inverted, empty, or outside the selected canvas.')
+            box = [math.floor(y1) - height / 2, math.floor(x1) - width / 2, math.ceil(y2) - height / 2, math.ceil(x2) - width / 2]
         y1, x1, y2, x2 = box
         if not (-height / 2 <= y1 < y2 <= height / 2 and -width / 2 <= x1 < x2 <= width / 2):
             raise ValueError(prefix + " bbox is inverted, empty, or outside the selected canvas. Check dimensions or regenerate.")

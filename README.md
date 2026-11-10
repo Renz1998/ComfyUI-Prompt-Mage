@@ -41,7 +41,7 @@ Restart ComfyUI, refresh the browser, then search **Prompt Mage** or **Archmage*
 
 **[Chat → Apply → Generate](docs/SPELL_SCROLL.md):** Grimoire handles conversation. Click **Use this prompt** on a chosen reply; **Spell Scroll** reads that approved snapshot for image generation. Further chat never silently changes it, and normal workflow runs never call the assistant.
 
-**[Grimoire (Beta)](docs/GRIMOIRE.md)** is a separate persistent conversation node with conversational chat, a live style dropdown, system/task instructions, pinned facts, Appearance Overrides, drag-and-drop file attachments, multiple image inputs, Markdown, message editing, Archmage styles and validated MOSS JSON. [Grimoire → MOSS sample](workflows/start-here/08-grimoire-to-moss.json).
+**[Grimoire (Beta)](docs/GRIMOIRE.md)** is a separate persistent conversation node with conversational chat, a live style dropdown, system/task instructions, pinned facts, Appearance Overrides, drag-and-drop file attachments, multiple image inputs, Markdown, message editing, Archmage styles, a warmer default voice and validated MOSS prompt cards. [Grimoire → MOSS sample](workflows/start-here/08-grimoire-to-moss.json).
 
 **[Tag Filters](docs/TAG_FILTERS.md):** reusable Full color, No text/watermarks and Photography presets, custom bans/removals and protected tags. Share one recipe between DART Generate and Archmage.
 

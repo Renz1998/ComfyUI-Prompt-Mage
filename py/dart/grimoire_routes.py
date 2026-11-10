@@ -88,6 +88,8 @@ def register_grimoire_routes():
                 chapter = request.query.get('id','')
             with LOCK:
                 value = read_memory(memory_path(chapter))
+                from .grimoire_prompt import prepare_turn
+                value['turns'] = [prepare_turn(t,value.get('settings')) for t in value['turns']]
         except (ValueError, OSError, TypeError, AttributeError):
             return web.json_response({'error':'Could not load conversation.'}, status=400)
         return web.json_response(value, headers={'Cache-Control':'no-store'})

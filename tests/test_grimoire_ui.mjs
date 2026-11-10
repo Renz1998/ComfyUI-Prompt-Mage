@@ -62,5 +62,12 @@ const legacyValues=legacyNames.map(name=>node.widgets.find(w=>w.name===name)?.va
 assert.equal(all(node.root).some(e=>e['aria-label']==='Mode'),false);
 const styleSelect=all(node.root).find(e=>e['aria-label']==='Style / theme');assert.equal(styleSelect.tag,'select');styleSelect.value='Photo · Amateur Instagram';styleSelect.listeners.change();assert.equal(node.widgets.find(w=>w.name==='style_preset').value,'Photo · Amateur Instagram');assert.equal(queued,2);assert.ok(all(node.root).some(e=>e.textContent?.includes('no request sent')));
 composer.value='Keep my failed draft';button('Send').listeners.click();await new Promise(resolve=>setTimeout(resolve,0));events.execution_error({detail:{prompt_id:'test-job'}});assert.equal(composer.value,'Keep my failed draft');
+node.widgets.find(w=>w.name==='output_selection').value='MOSS JSON layout';
+node.onExecuted({grimoire:[{turns:[{role:'assistant',content:'Let’s try a warmer lamp.',mode:'Latest response'}],summary:''}]});assert.equal(button('Use this prompt'),undefined);
+const canonical='{"summary":{"meta":[],"canvas":"single","caption":"A mug"},"items":[{"label":"object","caption":"A mug","bbox":[-100,-100,100,100]}],"bbox_coord_space":"abs_centralized","bbox_format":"yxyx"}';
+const mixed='Here you go:\n```json\n'+canonical+'\n```\nExtra discussion.';
+node.onExecuted({grimoire:[{turns:[{role:'assistant',content:mixed,prompt_text:canonical,mode:'MOSS JSON layout',valid:true,width:1024,height:1024}],summary:''}]});
+button('Copy prompt').listeners.click();assert.equal(copied,canonical);assert.ok(all(node.root).some(e=>e.textContent?.includes('Grimoire · MOSS prompt')));assert.equal(all(node.root).some(e=>e.textContent==='Extra discussion.'),false);
+button('Use this prompt').listeners.click();await new Promise(resolve=>setTimeout(resolve,0));assert.equal(applied.at(-1).text,mixed);
 node.onRemoved();
 console.log('Grimoire restores history, uses text-only DOM, prevents duplicate queued sends, copies output and exposes summary edits.');

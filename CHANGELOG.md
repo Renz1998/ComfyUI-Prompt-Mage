@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.21.0 — Clear MOSS prompt cards and Grimoire voice
+
+- Extracts one unambiguous JSON artifact from fenced, bare or mixed chat replies, fixing Extra data errors from trailing prose. Multiple different layouts stay blocked; invalid geometry is not silently repaired.
+- Uses official-style top-left Pixel Layout drafts and compiles coordinates in code, including fractional edge enclosure. Accepts existing native centered MOSS layouts too.
+- Displays a readable MOSS prompt card; Copy prompt and Spell Scroll use only compiled JSON. Discussion is not offered as a MOSS prompt. Existing recoverable replies can be applied after refreshing history, without another model call.
+- Preserves actual image socket names when intermediate sockets are empty, puts current attachments before reused images, and supplies an explicit current reference map.
+- Adds a warm, curious and lightly fantasy-themed default voice while preserving custom system prompts. Image captions stay precise; formatting-only requests should preserve scene content.
+
+
 ## 1.20.0 — Grimoire attachments and multiple image inputs
 
 - Adds Attach, drag-and-drop and clipboard image paste, with thumbnail/file chips, removal, saved previews and Attach again. Uploading makes no model call; failed execution restores the queued draft.

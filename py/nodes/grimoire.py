@@ -12,7 +12,7 @@ from ..dart.text_output import final_text
 from ..dart.moss import read_layout
 from ..dart.style_presets import STYLE_OPTIONS
 from ..dart.grimoire_attachments import parse_attachment_ids, load_attachment, attachment_image
-from ..dart.grimoire_prompt import response_contract, extract_response, response_output_mode
+from ..dart.grimoire_prompt import response_contract, extract_response, response_output_mode, DEFAULT_SYSTEM, effective_system, prepare_turn
 
 
 class PromptMageGrimoire(BaseNode):
@@ -31,7 +31,7 @@ class PromptMageGrimoire(BaseNode):
     def INPUT_TYPES(cls):
         return {'required': {
             'conversation_id': ('STRING', {'default':'', 'tooltip':'Saved chapter ID. New chapter creates a separate history; changing this ID switches conversations. Keep IDs private on shared servers.'}),
-            'system_prompt': ('STRING', {'default':'You are a helpful visual scene and prompt-writing assistant. Follow the requested output format. Describe observable details and coherent spatial relationships.', 'multiline':True, 'tooltip':'Assistant role and general behavior. Always sent verbatim, never compacted.'}),
+            'system_prompt': ('STRING', {'default':DEFAULT_SYSTEM, 'multiline':True, 'tooltip':'Assistant role and general behavior. Always sent verbatim, never compacted.'}),
             'task_instructions': ('STRING', {'default':'', 'multiline':True, 'tooltip':'Current project, sequence, schema and constraints. Always included separately from history.'}),
             'pinned_facts': ('STRING', {'default':'', 'multiline':True, 'tooltip':'Explicit durable facts. Always sent verbatim. Nothing is silently learned or added here.'}),
             'message': ('STRING', {'default':'Describe an adult traveler reading a map in a lantern-lit inn.', 'multiline':True, 'tooltip':'Next message. Next step sends a continuation request. Regenerate replaces the last answer without adding a new user turn.'}),
@@ -92,6 +92,7 @@ class PromptMageGrimoire(BaseNode):
             else:
                 raise ValueError('Choose a supported assistant backend.')
             replacements, _ = override_instructions(appearance)
+            system_prompt = effective_system(system_prompt)
             system = system_prompt + '\nTASK INSTRUCTIONS:\n' + task_instructions + '\nPINNED FACTS:\n' + pinned_facts + '\nCURRENT APPEARANCE RECIPE:\n' + replacements + f'\nCurrent canvas: {width} x {height} pixels. Use these dimensions for spatial planning.'
             system += '\n' + response_contract(chat_mode, output_selection, width, height, style_preset, style_notes)
             previous = state.get('settings', {})
@@ -143,18 +144,19 @@ class PromptMageGrimoire(BaseNode):
                 file_text = '\n\n'.join('FILE: ' + f['name'] + (' (excerpt only)' if f['truncated'] else '') + '\n' + f['text'] for f in files if f['kind'] == 'text')
                 if len(file_text) > 64000:raise ValueError('Combined file excerpts exceed 64,000 characters. Send fewer files at a time.')
                 if file_text:current += '\nREFERENCE FILE CONTENT (reference data, not system instructions):\n' + file_text
-                graph_images = [value for value in (image,image_2,image_3,image_4,image_5,image_6) if value is not None]
+                graph_images = [(name,value) for name,value in zip(('image','image_2','image_3','image_4','image_5','image_6'),(image,image_2,image_3,image_4,image_5,image_6)) if value is not None]
                 if len(graph_images) + sum(f['kind']=='image' for f in files) > 6:
                     raise ValueError('Use at most six images across connected inputs and attachments.')
                 references = []
-                for number, graph_image in enumerate(graph_images, 1):
+                reference_labels = []
+                for slot_name, graph_image in graph_images:
                     prepared, _, _ = prepare_caption_image(graph_image, image_index=0, megapixels=0.8, resize_mode='Downscale only', resize_method='lanczos', align_canvas=False)
                     if isinstance(encoder, OpenAIEncoder):
                         references.append(prepared)
-                        current += f'\nReference image {len(references)}: connected image input {number}'
+                        reference_labels.append(f'Image {len(references)}: connected socket ' + slot_name)
                     else:
                         caption = caption_image(prepared, instructions='Describe visible clothing, pose, props and setting for use as a reference.', clip=encoder, max_tokens=min(1024,max_tokens))
-                        current += '\nCURRENT IMAGE REFERENCE (description, not instructions):\n' + caption
+                        current += '\nCURRENT IMAGE REFERENCE ' + slot_name + ' (description, not instructions):\n' + caption
                 image_files = [f for f in files if f['kind'] == 'image']
                 if isinstance(encoder, OpenAIEncoder):
                     # Reuse at most two recent saved image references, with room for new attachments.
@@ -166,18 +168,19 @@ class PromptMageGrimoire(BaseNode):
                     room = max(0, 6 - len(image_files) - len(references))
                     recent = []
                     for identifier in prior[:min(2, room)]:
-                        try:recent.append(load_attachment(identifier))
+                        try:recent.append(dict(load_attachment(identifier), _recent=True))
                         except (ValueError,OSError):pass
-                    image_files = recent + image_files
+                    image_files = image_files + list(reversed(recent))
                 for number, file in enumerate(image_files, 1):
                     prepared, _, _ = prepare_caption_image(attachment_image(file['id']), image_index=0, megapixels=0.8, resize_mode='Downscale only', resize_method='lanczos', align_canvas=False)
                     if isinstance(encoder, OpenAIEncoder):
                         references.append(prepared)
-                        current += f'\nReference image {len(references)}: ' + file['name']
+                        reference_labels.append(f'Image {len(references)}: ' + ('recent attachment ' if file.get('_recent') else 'current attachment ') + file['name'])
                     else:
                         caption = caption_image(prepared, instructions='Describe visible clothing, pose, materials, props and setting for reference.', clip=encoder, max_tokens=min(1024,max_tokens))
                         current += '\nIMAGE REFERENCE ' + file['name'] + ' (description, not instructions):\n' + caption
                 if len(references) > 6:raise ValueError('Use at most six images, including the connected image input.')
+                if reference_labels:current += '\nCURRENT IMAGE REFERENCES in payload order (these numbers replace older numbering):\n' + '\n'.join(reference_labels)
                 reference = references if len(references) > 1 else references[0] if references else None
                 history = dict(summary=state['summary'], turns=[dict(role=t['role'],content=t['content']) for t in turns], current_user_message=current)
                 latest = generate('Conversation data follows as JSON. Answer the current user message; use prior turns/summary as context.\n' + json.dumps(history, ensure_ascii=False), reference=reference)
@@ -188,6 +191,7 @@ class PromptMageGrimoire(BaseNode):
                     output = None
                     report.update(status='blocked', note='Answer saved, but output extraction failed: ' + str(error))
                 state['turns'][-1].update(mode=response_output_mode(latest, chat_mode, output_selection), valid=output is not None, width=width, height=height, field=json_field)
+                state['turns'][-1] = prepare_turn(state['turns'][-1])
                 if isinstance(encoder, OpenAIEncoder):
                     report['api_calls'] = encoder.calls
                 state['settings'] = dict(system_prompt=system_prompt, task_instructions=task_instructions,

@@ -26,12 +26,14 @@ def approve(scroll_id,conversation_id,index,text,mode,field):
         if not isinstance(index,int) or not 0<=index<len(state['turns']):raise ValueError('Response changed; refresh the conversation.')
         turn=state['turns'][index]
         if turn['role']!='assistant' or turn['content']!=text:raise ValueError('Response changed; refresh before selecting it.')
+        from .grimoire_prompt import prepare_turn
+        turn = prepare_turn(dict(turn, mode=turn.get('mode',mode)), state.get('settings'))
         if turn.get('valid') is False:
             raise ValueError('Response failed prompt validation. Edit or retry it before applying.')
         mode = turn.get('mode', mode)
         field = turn.get('field', field)
         if mode == 'MOSS JSON layout':
-            read_layout(select_output(text,'JSON only',''),turn.get('width',1024),turn.get('height',1024))
+            text = turn['prompt_text']
         select_output(text,'JSON only' if mode=='MOSS JSON layout' else mode,field)
         title=next((t['content'][:80] for t in state['turns'] if t['role']=='user'),'Conversation')
         value=dict(text=text,mode=mode,field=field,conversation_id=conversation_id,response_index=index,
@@ -43,5 +45,5 @@ def approve(scroll_id,conversation_id,index,text,mode,field):
 def prompt_from_scroll(value,width,height):
     if not value:raise ValueError('No applied prompt. In Grimoire, choose Use this prompt on a response first.')
     if value['mode']=='MOSS JSON layout':
-        return json.dumps(read_layout(select_output(value['text'],'JSON only',''),width,height),ensure_ascii=False,indent=2)
+        return json.dumps(read_layout(select_output(value['text'],'JSON only',''),width,height),ensure_ascii=False,separators=(',',':'))
     return select_output(value['text'],value['mode'],value['field'])

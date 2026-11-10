@@ -1,13 +1,13 @@
-import { ensureImageInputs } from './grimoire_images.mjs?v=1.20.0';
-import { installAttachments } from './grimoire_attachments.mjs?v=1.20.0';
-import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.20.0';
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.20.0';
-import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.20.0';
-import { renderMarkdown } from './grimoire_markdown.mjs?v=1.20.0';
+import { ensureImageInputs } from './grimoire_images.mjs?v=1.21.0';
+import { installAttachments } from './grimoire_attachments.mjs?v=1.21.0';
+import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.21.0';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.21.0';
+import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.21.0';
+import { renderMarkdown } from './grimoire_markdown.mjs?v=1.21.0';
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.20.0';
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.20.0';
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.21.0';
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.21.0';
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
@@ -58,11 +58,16 @@ export function installGrimoire(node) {
             const item=document.createElement('div');item.className='gm-message '+(turn.role==='user'?'gm-user':'gm-assistant');
             const role=document.createElement('small');role.className='gm-role';role.textContent=turn.role==='user'?'You':'Grimoire';item.append(role);
             const copy=async text=>{try{await navigator.clipboard.writeText(text);status.textContent='Copied';}catch{status.textContent='Clipboard unavailable · select the text to copy';}};
-            const display=turn.role==='user'?(turn.message??turn.content):turn.content;
+            let display=turn.role==='user'?(turn.message??turn.content):turn.content;
+            if(turn.prompt_text){
+                item.className+=' gm-prompt';
+                let pretty=turn.prompt_text;try{pretty=JSON.stringify(JSON.parse(pretty),null,2);}catch{}
+                display='```json\n'+pretty+'\n```';role.textContent='Grimoire · MOSS prompt'+(turn.width&&turn.height?' · '+turn.width+' × '+turn.height:'');
+            }
             renderMarkdown(item,display,copy);attachmentUI?.renderSaved(item,turn.attachments);
             const tools=document.createElement('div');tools.className='gm-message-actions';
             const action=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>{if(label==='Copy'||!busy)return fn();});tools.append(b);return b;};
-            action('Copy',()=>void copy(display));
+            action(turn.prompt_text?'Copy prompt':'Copy',()=>void copy(turn.prompt_text||display));
             const chapter=field('conversation_id').value;
             const branch=()=>index>=value.turns.length-(turn.role==='user'?2:1)||window.confirm('This replaces later messages in this chat after the edit succeeds. The applied Spell Scroll stays unchanged. Continue?');
             if(turn.role==='user'){
@@ -72,18 +77,21 @@ export function installGrimoire(node) {
                 action('Retry',()=>{const previous=value.turns[index-1];if(previous?.role==='user'&&branch())void run('Edit message',previous.message??previous.content,index-1,previous.content,previous.attachments||[]);});
                 action('Edit',()=>{
                     if(!branch())return;
-                    const editor=document.createElement('textarea');editor.value=turn.content;editor.setAttribute('aria-label','Edit assistant response');item.append(editor);
+                    const editor=document.createElement('textarea');editor.value=turn.prompt_text||turn.content;editor.setAttribute('aria-label','Edit assistant response');item.append(editor);
                     const save=action('Save edit (no API call)',async()=>{
                         try{save.disabled=true;const r=await api.fetchApi('/prompt_mage/grimoire/message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:chapter,index,original:turn.content,text:editor.value})});const v=await r.json();if(!r.ok)throw Error(v.error);if(field('conversation_id').value===chapter)render(v);status.textContent='Response edited · applied Spell Scroll unchanged';}catch(error){save.disabled=false;status.textContent=error.message;}
                     });action('Cancel',()=>render(value));editor.focus?.();
                 });
-                const apply=action('Use this prompt',()=>void applyResponse(index,turn.content,chapter,turn.mode));
-                apply.disabled=turn.valid===false;if(turn.valid===false)apply.title='Invalid prompt format. Edit this reply or retry before applying.';
+                if(turn.format_error){const note=document.createElement('small');note.className='gm-format-note';note.textContent='Prompt not ready: '+turn.format_error;item.append(note);}
+                if(turn.prompt_text||turn.mode==='MOSS JSON layout'||field('output_selection')?.value!=='MOSS JSON layout'){
+                    const apply=action('Use this prompt',()=>void applyResponse(index,turn.content,chapter,turn.mode));
+                    apply.disabled=turn.valid===false;if(turn.valid===false)apply.title='Edit this reply to keep one complete valid prompt, or retry.';
+                }
             }
             item.append(tools);history.append(item);
         }
         if(!(value.turns||[]).length){const empty=document.createElement('div');empty.className='gm-empty';empty.textContent='✦\nWhat would you like to create?\nStart a conversation, or open a saved chat above.';history.append(empty);}
-        latest=[...(value.turns||[])].reverse().find(t=>t.role==='assistant')?.content||'';
+        const lastReply=[...(value.turns||[])].reverse().find(t=>t.role==='assistant');latest=lastReply?.prompt_text||lastReply?.content||'';
         summary.value=value.summary||'';
         for(const [name,content] of Object.entries(value.settings||{}))if(field(name)&&name!=='conversation_id')field(name).value=content;
         status.textContent=value.report?.compacted?'Older turns compacted · inspect the summary':'';

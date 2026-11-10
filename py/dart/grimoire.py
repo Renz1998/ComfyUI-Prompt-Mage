@@ -56,11 +56,13 @@ def edit_assistant(conversation_id, index, original, text):
         turn = state['turns'][index]
         if turn['role'] != 'assistant' or turn['content'] != original:
             raise ValueError('Message changed. Refresh history before editing.')
-        from .grimoire_prompt import extract_response
+        from .grimoire_prompt import extract_response, prepare_turn
         mode = turn.get('mode', 'Latest response')
         extract_response(text, 'Prompt workshop', mode, turn.get('field',state.get('settings',{}).get('json_field','prompt')), turn.get('width',1024), turn.get('height',1024))
         state['turns'] = state['turns'][:index+1]
-        turn.update(content=text, valid=True)
+        prepared = prepare_turn(dict(turn, content=text, valid=True), state.get('settings'))
+        if prepared.get('valid') is False:raise ValueError(prepared['format_error'])
+        turn.clear();turn.update(prepared)
         save_memory(path,state)
         return state
 
@@ -68,12 +70,8 @@ def edit_assistant(conversation_id, index, original, text):
 def select_output(text, mode, section):
     if mode == 'Latest response':
         return text
-    value = text.strip()
-    if value.startswith('```'):
-        lines = value.splitlines()
-        if lines[-1].strip() == '```':
-            value = '\n'.join(lines[1:-1])
-    parsed = json.loads(value)
+    from .grimoire_json import select_json
+    parsed = select_json(text)
     if mode == 'JSON field':
         for key in section.split('.'):
             if not isinstance(parsed, dict) or key not in parsed:

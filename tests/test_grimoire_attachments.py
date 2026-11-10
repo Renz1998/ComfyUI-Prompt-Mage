@@ -89,6 +89,8 @@ class AttachmentTests(unittest.TestCase):
         self.assertTrue(all('image_'+str(i) in node.INPUT_TYPES()['optional'] for i in range(2,7)))
         execute=Mock(return_value=SimpleNamespace(args=['The two outfit references.']))
         with patch.object(OpenAIEncoder,'__init__',return_value=None),patch.object(OpenAIEncoder,'calls',[],create=True),patch('dart_plugin.py.nodes.grimoire.execute_generation',execute),patch('dart_plugin.py.nodes.grimoire.caption_image',side_effect=AssertionError('No extra paid caption stage')):
-            node.chat('multi-input',action='Send',message='Compare the outfits',assistant_backend='OpenAI API',image=torch.zeros(1,16,16,3),image_2=torch.ones(1,16,16,3))
+            node.chat('multi-input',action='Send',message='Compare the outfits',assistant_backend='OpenAI API',image=torch.zeros(1,16,16,3),image_3=torch.ones(1,16,16,3))
         self.assertEqual(execute.call_count,1)
         self.assertEqual(len(execute.call_args.kwargs['image']),2)
+        self.assertIn('connected socket image_3',execute.call_args.kwargs['prompt'])
+        self.assertNotIn('connected socket image_2',execute.call_args.kwargs['prompt'])

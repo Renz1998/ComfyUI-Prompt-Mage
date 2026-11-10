@@ -37,6 +37,8 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     .grimoire-app .gm-attachment span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;font-size:12px}.grimoire-app .gm-attachment img{width:40px;height:40px;object-fit:cover;border-radius:5px}
     .grimoire-app .gm-attachment button{min-height:26px;padding:2px 7px}.grimoire-app .gm-saved-attachments{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:12px}
     .grimoire-app .gm-saved-attachments img{display:block;max-width:192px;max-height:192px;margin:8px 0}.grimoire-app .gm-saved-attachments pre{max-height:160px;white-space:pre-wrap}.grimoire-app .gm-saved-attachments button{min-height:28px;padding:4px 8px}
+    .grimoire-app .gm-format-note{display:block;margin:8px 0;padding:8px;border-left:3px solid #e5ad72;color:#f0c99f}
+    .grimoire-app .gm-prompt pre,.grimoire-app .gm-prompt pre code{white-space:pre-wrap!important;overflow-wrap:anywhere}
     `;
     const button=(name,fn,cls='')=>{const b=make('button',cls,name);b.type='button';b.addEventListener('click',fn);return b;};
     const invoke=name=>()=>actions.get(name)?.();

@@ -44,6 +44,7 @@ export const grimoireTheme=`
 .grimoire-app .gm-applied-badge{display:inline-block;padding:3px 8px;border:1px solid #e6bc69;border-radius:5px;background:#e4bc6a19;color:#ffdfa0;font:600 11px/1.4 system-ui,sans-serif;max-width:100%;overflow-wrap:anywhere}
 .grimoire-app .gm-message.gm-selected{border-color:#e5bd70;background:linear-gradient(135deg,#3d2c46f5,#251a2df5);box-shadow:0 0 0 1px #b899e944,0 0 18px #bd91ef55,inset 0 0 24px #dab56a16;animation:gm-bound-glow 4s ease-in-out infinite}
 .grimoire-app .gm-selected .gm-message-actions button[aria-pressed=true]{color:#ffdfa0;background:#d4aa4c20;border-color:#e1ba70;opacity:1}
+.grimoire-app .gm-thinking[aria-pressed=true]{color:#ffe1a3;border-color:#d4ae68;background:linear-gradient(135deg,#614273,#35223f);box-shadow:0 0 12px #bb92e74d,inset 0 0 8px #e0bd6415}
 @keyframes gm-bound-glow{0%,100%{box-shadow:0 0 0 1px #b899e944,0 0 14px #bd91ef44,inset 0 0 20px #dab56a12}50%{box-shadow:0 0 0 1px #d4af7970,0 0 22px #bd91ef77,inset 0 0 26px #dab56a20}}
 @media(prefers-reduced-motion:reduce){.grimoire-app .gm-message.gm-selected{animation:none}.grimoire-app button{transition:none}}
 `;

@@ -62,6 +62,8 @@ Messages support safe Markdown: headings, lists, bold/italic, HTTPS/HTTP links a
 
 **Copy latest** copies the answer. `latest_response` always retains the complete answer; `output` can select the response, valid JSON, a dot-separated JSON field, or validated MOSS JSON. Use **Spell Scroll.prompt** for downstream generation; legacy Grimoire data outputs are only for explicit chat jobs. Width/height should share the latent's Resolution source. MOSS validation checks schema/boxes, not scene quality.
 
+**Thinking shortcut (1.22.1):** the Thinking toggle beside Send controls the same setting as Settings → Thinking. Its On/pressed state is visible, it is saved with workflow settings, and changing it does not send a request. It applies to the next reply. Model support varies; thinking can take longer and consumes the generation token budget. If a model exhausts that budget without a final answer, raise the token limit or turn Thinking off.
+
 ## Models and images
 
 Local Qwen is the default. Connect a full generation-capable CLIP or choose an installed model. Without a compatible model, Automatic can download the pinned small assistant fallback. OpenAI and DeepSeek use the same separate masked provider-key panels as Archmage. Provider charges/policies apply. Summary and image-caption stages add calls; cancellation cannot undo billing.

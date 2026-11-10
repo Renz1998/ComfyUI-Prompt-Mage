@@ -1,14 +1,14 @@
-import { isAppliedResponse } from './grimoire_applied.mjs?v=1.22.0';
-import { ensureImageInputs } from './grimoire_images.mjs?v=1.22.0';
-import { installAttachments } from './grimoire_attachments.mjs?v=1.22.0';
-import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.22.0';
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.22.0';
-import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.22.0';
-import { renderMarkdown } from './grimoire_markdown.mjs?v=1.22.0';
+import { isAppliedResponse } from './grimoire_applied.mjs?v=1.22.1';
+import { ensureImageInputs } from './grimoire_images.mjs?v=1.22.1';
+import { installAttachments } from './grimoire_attachments.mjs?v=1.22.1';
+import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.22.1';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.22.1';
+import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.22.1';
+import { renderMarkdown } from './grimoire_markdown.mjs?v=1.22.1';
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.22.0';
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.22.0';
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.22.1';
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.22.1';
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {

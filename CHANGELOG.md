@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.22.1 — Thinking beside Send
+
+- Adds a compact Thinking toggle beside Send, synchronized with the existing Settings control and saved workflow value. Toggling makes no model request; the next reply uses the selected setting.
+- Shows a clear pressed/on state with spellbook styling and a tooltip covering model support, latency and token usage. The toggle is disabled while a request is running.
+
+
 ## 1.22.0 — Bound-prompt glow and fantasy spellbook theme
 
 - Marks the reply applied to the selected Spell Scroll with an amethyst/gold glow, an Applied badge and a pressed Applied button. Matching includes conversation, stable response identity and snapshot text (legacy records fall back to index/content), so edits/regeneration do not falsely inherit selection.

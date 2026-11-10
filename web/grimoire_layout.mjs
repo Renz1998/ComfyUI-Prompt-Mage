@@ -1,4 +1,4 @@
-import {grimoireTheme} from './grimoire_theme.mjs?v=1.22.0';
+import {grimoireTheme} from './grimoire_theme.mjs?v=1.22.1';
 let layoutCounter=0;
 export function layoutGrimoire(root, {title,status,chats,history,summary,composer,actions,field,targets,active,changed}) {
     const layoutId='grimoire-panel-'+(++layoutCounter);
@@ -81,15 +81,18 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     const composerBox=make('div','gm-composer'),attachmentMount=make('div','gm-attachments'),attachmentButtonMount=make('div');composer.style.cssText='';composer.rows=2;composer.title='Enter to send · Shift+Enter for a new line';composerBox.append(attachmentMount,composer);
     const footer=make('div','gm-footer');const send=button('Send',invoke('Send'),'gm-primary');const cancelEdit=button('Cancel edit',invoke('Cancel edit'));cancelEdit.hidden=true;
     send.title='Send a new assistant request.';
+    const thinking=button('✧ Thinking',()=>{const widget=field('thinking');if(!widget)return;widget.value=!Boolean(widget.value);changed('thinking');},'gm-thinking');
+    thinking.setAttribute('aria-label','Thinking mode');
+    thinking.title='Ask a supported model to spend more effort planning the next reply. May take longer and use more tokens. Support depends on the selected model. Changing this toggle sends no request.';
     const more=make('select');more.setAttribute('aria-label','Conversation actions');
     const blank=make('option','','More actions…');blank.value='';more.append(blank);
     for(const action of ['Next step','Regenerate','Copy latest','Refresh history','Refresh chats','Compact now','Clear conversation']){const option=make('option','',action==='Next step'?'Ask for next scene (new request)':action==='Regenerate'?'Rewrite reply (new request)':action==='Compact now'?'Compact memory (new request)':action);option.value=action;more.append(option);}
     more.addEventListener('change',()=>{actions.get(more.value)?.();more.value='';});
-    footer.append(attachmentButtonMount,send,cancelEdit,make('div','gm-spacer'),more);
+    footer.append(attachmentButtonMount,send,thinking,cancelEdit,make('div','gm-spacer'),more);
     chatPage.append(modeBar,history,memory,composerBox,footer);
     root.replaceChildren();root.append(style,header,tabs,status,chatPage,instructions,settings);tab('Chat');
     return {keyMount,attachmentMount,attachmentButtonMount,tab,setEditing(editing){cancelEdit.hidden=!editing;send.textContent=editing?'Send edited message':'Send';},sync(backend,busy,hasAnswer){
-        provider.title=backend+' · Open settings';send.disabled=busy;
+        provider.title=backend+' · Open settings';send.disabled=busy;thinking.hidden=!field('thinking');thinking.disabled=busy;thinking.setAttribute('aria-pressed',String(Boolean(field('thinking')?.value)));thinking.textContent=field('thinking')?.value?'✧ Thinking · On':'✧ Thinking';
         for(const b of bindings){b.sync();b.row.hidden=b.name==='openai_model'?backend!=='OpenAI API':b.name==='deepseek_model'?backend!=='DeepSeek API':b.name==='local_model'?backend!=='Local Qwen':b.name==='json_field'?field('output_selection')?.value!=='JSON field':false;}
         keyHint.hidden=backend!=='Local Qwen';memory.hidden=!summary.value;
     }};

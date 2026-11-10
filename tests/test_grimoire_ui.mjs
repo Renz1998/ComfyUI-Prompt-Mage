@@ -1,3 +1,4 @@
+import {isAppliedResponse} from '../web/grimoire_applied.mjs';
 import {ensureImageInputs} from '../web/grimoire_images.mjs';
 import {installAttachments} from '../web/grimoire_attachments.mjs';
 import assert from 'node:assert/strict';
@@ -15,11 +16,12 @@ class Element {
     addEventListener(name,fn){this.listeners[name]=fn;}
     removeEventListener(name){delete this.listeners[name];}
 }
+let mockActive=null;
 let queued=0,copied='',imageJobs=0,job,applied=[],edits=[],events={};
 const snapshot={output:{7:{class_type:'DanbooruTagsTransformerGrimoire',inputs:{}},8:{class_type:'SaveImage',inputs:{images:['7',0]}}},workflow:{nodes:[]}};
-const context={ensureImageInputs,installAttachments,ensureCanvasInputs,layoutGrimoire,chatPrompt,queueChat,renderMarkdown,document:{createElement:tag=>new Element(tag)},crypto:{getRandomValues:bytes=>bytes.fill(7)},
+const context={isAppliedResponse,ensureImageInputs,installAttachments,ensureCanvasInputs,layoutGrimoire,chatPrompt,queueChat,renderMarkdown,document:{createElement:tag=>new Element(tag)},crypto:{getRandomValues:bytes=>bytes.fill(7)},
     navigator:{clipboard:{async writeText(value){copied=value;}}},window:{confirm:()=>true},
-    app:{registerExtension(){},async graphToPrompt(){return snapshot;},async queuePrompt(){imageJobs++;}},api:{async queuePrompt(index,value){queued++;job=value;return {prompt_id:'test-job'};},async fetchApi(path,options){if(path.endsWith('/capabilities'))return {ok:true,async json(){return {partial_execution:true};}};assert.equal(options.method,'POST');if(path==='/prompt'){queued++;const body=JSON.parse(options.body);job={output:body.prompt};assert.deepEqual(body.partial_execution_targets,['7']);return {ok:true,async json(){return {prompt_id:'test-job'};}};}return {ok:true,async json(){if(path.endsWith('/message')){const body=JSON.parse(options.body);edits.push(body);return {turns:[{role:'user',content:'Edited question'},{role:'assistant',content:body.text}],summary:''};}if(path.endsWith('/scroll')){const body=JSON.parse(options.body);if(body.apply)applied.push(body);return {active:null};}if(path.endsWith('/chats'))return {chats:[{id:'older-chat',title:'An older chat',updated:1,turns:2}]};return JSON.parse(options.body).id==='older-chat'?{turns:[{role:'assistant',content:'Saved answer'}],summary:'Saved summary',settings:{task_instructions:'Restored task'}}:{turns:[],summary:''};}};},addEventListener(name,callback){events[name]=callback;},removeEventListener(name){delete events[name];}},
+    app:{registerExtension(){},async graphToPrompt(){return snapshot;},async queuePrompt(){imageJobs++;}},api:{async queuePrompt(index,value){queued++;job=value;return {prompt_id:'test-job'};},async fetchApi(path,options){if(path.endsWith('/capabilities'))return {ok:true,async json(){return {partial_execution:true};}};assert.equal(options.method,'POST');if(path==='/prompt'){queued++;const body=JSON.parse(options.body);job={output:body.prompt};assert.deepEqual(body.partial_execution_targets,['7']);return {ok:true,async json(){return {prompt_id:'test-job'};}};}return {ok:true,async json(){if(path.endsWith('/message')){const body=JSON.parse(options.body);edits.push(body);return {turns:[{role:'user',content:'Edited question'},{role:'assistant',content:body.text}],summary:''};}if(path.endsWith('/scroll')){const body=JSON.parse(options.body);if(body.apply){applied.push(body);mockActive={conversation_id:body.conversation_id,response_index:body.index,text:body.text,title:'Applied test reply'};}return {active:mockActive};}if(path.endsWith('/chats'))return {chats:[{id:'older-chat',title:'An older chat',updated:1,turns:2}]};return JSON.parse(options.body).id==='older-chat'?{turns:[{role:'assistant',content:'Saved answer'}],summary:'Saved summary',settings:{task_instructions:'Restored task'}}:{turns:[],summary:''};}};},addEventListener(name,callback){events[name]=callback;},removeEventListener(name){delete events[name];}},
     installOpenAIKeyWidget(){},refreshOpenAIKeyWidget(){},installDeepSeekKeyWidget(){},refreshDeepSeekKeyWidget(){}};
 vm.runInNewContext(readFileSync(new URL('../web/grimoire.mjs',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'').replace('export function','function'),context);
 globalThis.document=context.document;
@@ -69,5 +71,13 @@ const mixed='Here you go:\n```json\n'+canonical+'\n```\nExtra discussion.';
 node.onExecuted({grimoire:[{turns:[{role:'assistant',content:mixed,prompt_text:canonical,mode:'MOSS JSON layout',valid:true,width:1024,height:1024}],summary:''}]});
 button('Copy prompt').listeners.click();assert.equal(copied,canonical);assert.ok(all(node.root).some(e=>e.textContent?.includes('Grimoire · MOSS prompt')));assert.equal(all(node.root).some(e=>e.textContent==='Extra discussion.'),false);
 button('Use this prompt').listeners.click();await new Promise(resolve=>setTimeout(resolve,0));assert.equal(applied.at(-1).text,mixed);
+const selected=()=>all(node.root).filter(e=>e.className?.split(' ').includes('gm-selected'));
+assert.equal(selected().length,1);assert.equal(button('✓ Applied').disabled,true);assert.equal(button('✓ Applied')['aria-pressed'],'true');
+const chosenTurn={role:'assistant',content:mixed,prompt_text:canonical,mode:'MOSS JSON layout',valid:true,width:1024,height:1024};
+node.onExecuted({grimoire:[{turns:[chosenTurn,{...chosenTurn}],summary:''}]});assert.equal(selected().length,1);
+node.onExecuted({grimoire:[{turns:[{...chosenTurn,content:'A replacement reply',prompt_text:canonical.replace('A mug','A teapot')}],summary:''}]});assert.equal(selected().length,0);
+node.onExecuted({grimoire:[{turns:[chosenTurn],summary:''}]});assert.equal(selected().length,1);
+assert.equal(isAppliedResponse(mockActive,'another-chat',0,chosenTurn),false);assert.equal(isAppliedResponse(mockActive,node.widgets.find(w=>w.name==='conversation_id').value,1,chosenTurn),false);
+const identified={...chosenTurn,id:'a'.repeat(32)};const activeWithId={...mockActive,response_id:identified.id};assert.equal(isAppliedResponse(activeWithId,activeWithId.conversation_id,9,identified),true);assert.equal(isAppliedResponse(activeWithId,activeWithId.conversation_id,activeWithId.response_index,{...identified,id:'b'.repeat(32)}),false);
 node.onRemoved();
 console.log('Grimoire restores history, uses text-only DOM, prevents duplicate queued sends, copies output and exposes summary edits.');

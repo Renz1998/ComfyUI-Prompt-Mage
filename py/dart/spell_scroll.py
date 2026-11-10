@@ -12,12 +12,25 @@ def scroll_path(scroll_id):
 
 
 def active_scroll(scroll_id):
-    path=scroll_path(scroll_id)
-    if not path.exists():return None
-    if path.stat().st_size>2*1024*1024:raise ValueError('Spell Scroll file is too large.')
-    value=json.loads(path.read_text(encoding='utf-8'))
-    if not isinstance(value.get('text'),str):raise ValueError('Invalid Spell Scroll.')
-    return value
+    with LOCK:
+        path=scroll_path(scroll_id)
+        if not path.exists():return None
+        if path.stat().st_size>2*1024*1024:raise ValueError('Spell Scroll file is too large.')
+        value=json.loads(path.read_text(encoding='utf-8'))
+        if not isinstance(value.get('text'),str):raise ValueError('Invalid Spell Scroll.')
+        # Bind old snapshots before compaction moves their source position. Never guess another reply.
+        if not value.get('response_id') and isinstance(value.get('response_index'),int):
+            try:
+                from .grimoire_prompt import prepare_turn
+                state=read_memory(memory_path(value['conversation_id']))
+                index=value['response_index']
+                if 0<=index<len(state['turns']):
+                    turn=prepare_turn(state['turns'][index])
+                    if turn['role']=='assistant' and value['text'] in (turn['content'],turn.get('prompt_text')):
+                        value['response_id']=turn['id'];save_memory(path,value)
+            except (ValueError,KeyError,TypeError,OSError):
+                pass
+        return value
 
 
 def approve(scroll_id,conversation_id,index,text,mode,field):
@@ -36,7 +49,7 @@ def approve(scroll_id,conversation_id,index,text,mode,field):
             text = turn['prompt_text']
         select_output(text,'JSON only' if mode=='MOSS JSON layout' else mode,field)
         title=next((t['content'][:80] for t in state['turns'] if t['role']=='user'),'Conversation')
-        value=dict(text=text,mode=mode,field=field,conversation_id=conversation_id,response_index=index,
+        value=dict(text=text,mode=mode,field=field,conversation_id=conversation_id,response_index=index,response_id=turn['id'],
                    title=title,updated=time.time())
         save_memory(scroll_path(scroll_id),value)
         return value

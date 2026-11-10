@@ -1,5 +1,6 @@
 """Transactional conversation storage; summaries never replace pinned instructions."""
 import json
+import hashlib
 import os
 import re
 import threading
@@ -25,9 +26,12 @@ def read_memory(path):
     value = json.loads(path.read_text(encoding='utf-8'))
     if value.get('version') != 1 or not isinstance(value.get('turns'), list) or not isinstance(value.get('summary'), str):
         raise ValueError('Conversation memory is invalid. Start a new chapter or restore its file.')
-    for turn in value['turns']:
+    for index, turn in enumerate(value['turns']):
         if turn.get('role') not in ('user','assistant') or not isinstance(turn.get('content'), str):
             raise ValueError('Invalid conversation turn.')
+        if not isinstance(turn.get('id'),str) or not re.fullmatch(r'[a-f0-9]{32}',turn['id']):
+            source=json.dumps([path.stem,index,turn['role'],turn['content']],ensure_ascii=False).encode('utf-8')
+            turn['id']=hashlib.sha256(source).hexdigest()[:32]
     return value
 
 

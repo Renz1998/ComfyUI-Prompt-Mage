@@ -1,3 +1,4 @@
+import {grimoireTheme} from './grimoire_theme.mjs?v=1.22.0';
 let layoutCounter=0;
 export function layoutGrimoire(root, {title,status,chats,history,summary,composer,actions,field,targets,active,changed}) {
     const layoutId='grimoire-panel-'+(++layoutCounter);
@@ -40,6 +41,7 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     .grimoire-app .gm-format-note{display:block;margin:8px 0;padding:8px;border-left:3px solid #e5ad72;color:#f0c99f}
     .grimoire-app .gm-prompt pre,.grimoire-app .gm-prompt pre code{white-space:pre-wrap!important;overflow-wrap:anywhere}
     `;
+    style.textContent+=grimoireTheme;
     const button=(name,fn,cls='')=>{const b=make('button',cls,name);b.type='button';b.addEventListener('click',fn);return b;};
     const invoke=name=>()=>actions.get(name)?.();
     const header=make('div','gm-header');title.textContent='✦ Grimoire';

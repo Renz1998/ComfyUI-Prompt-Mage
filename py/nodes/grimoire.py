@@ -1,4 +1,5 @@
 import copy
+import uuid
 import json
 from .base import BaseNode
 from ..dart.grimoire import LOCK, memory_path, read_memory, save_memory, transcript, select_output
@@ -184,7 +185,7 @@ class PromptMageGrimoire(BaseNode):
                 reference = references if len(references) > 1 else references[0] if references else None
                 history = dict(summary=state['summary'], turns=[dict(role=t['role'],content=t['content']) for t in turns], current_user_message=current)
                 latest = generate('Conversation data follows as JSON. Answer the current user message; use prior turns/summary as context.\n' + json.dumps(history, ensure_ascii=False), reference=reference)
-                state['turns'].extend([dict(role='user',content=current,message=typed_message,attachments=[{k:f[k] for k in ('id','name','kind','truncated')} for f in files]),dict(role='assistant',content=latest)])
+                state['turns'].extend([dict(id=uuid.uuid4().hex,role='user',content=current,message=typed_message,attachments=[{k:f[k] for k in ('id','name','kind','truncated')} for f in files]),dict(id=uuid.uuid4().hex,role='assistant',content=latest)])
                 try:
                     output = extract_response(latest, chat_mode, output_selection, json_field, width, height)
                 except (ValueError, TypeError) as error:

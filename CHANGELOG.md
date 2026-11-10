@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.22.0 — Bound-prompt glow and fantasy spellbook theme
+
+- Marks the reply applied to the selected Spell Scroll with an amethyst/gold glow, an Applied badge and a pressed Applied button. Matching includes conversation, stable response identity and snapshot text (legacy records fall back to index/content), so edits/regeneration do not falsely inherit selection.
+- Restores highlighting from saved server state when chats load; changing destinations updates the highlight. Applying does not generate text or images.
+- Adds a local spellbook theme with brass borders, dark plum panels, warm typography and faint arcane ornamentation. No external fonts or textures are loaded; the compact layout stays intact.
+- Uses a slow glow animation and a static highlight when reduced motion is requested.
+
+
 ## 1.21.0 — Clear MOSS prompt cards and Grimoire voice
 
 - Extracts one unambiguous JSON artifact from fenced, bare or mixed chat replies, fixing Extra data errors from trailing prose. Multiple different layouts stay blocked; invalid geometry is not silently repaired.

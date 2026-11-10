@@ -1,13 +1,14 @@
-import { ensureImageInputs } from './grimoire_images.mjs?v=1.21.0';
-import { installAttachments } from './grimoire_attachments.mjs?v=1.21.0';
-import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.21.0';
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.21.0';
-import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.21.0';
-import { renderMarkdown } from './grimoire_markdown.mjs?v=1.21.0';
+import { isAppliedResponse } from './grimoire_applied.mjs?v=1.22.0';
+import { ensureImageInputs } from './grimoire_images.mjs?v=1.22.0';
+import { installAttachments } from './grimoire_attachments.mjs?v=1.22.0';
+import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.22.0';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.22.0';
+import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.22.0';
+import { renderMarkdown } from './grimoire_markdown.mjs?v=1.22.0';
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.21.0';
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.21.0';
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.22.0';
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.22.0';
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
@@ -42,18 +43,31 @@ export function installGrimoire(node) {
         targets.value=ids.includes(node.properties.mage_scroll_id)?node.properties.mage_scroll_id:ids[0]||'';
         node.properties.mage_scroll_id=targets.value;
     }
+    function refreshAppliedCards(){
+        for(const card of cards){
+            const selected=isAppliedResponse(appliedState,field('conversation_id').value,card.index,card.turn)&&card.chapter===field('conversation_id').value;
+            card.item.className=card.baseClass+(selected?' gm-selected':'');
+            card.item.setAttribute('aria-label',selected?'Applied prompt for Spell Scroll '+targets.value:'Grimoire response');
+            card.badge.hidden=!selected;card.badge.textContent=selected?'✦ Applied · '+targets.value:'';
+            if(card.apply){card.apply.textContent=selected?'✓ Applied':'Use this prompt';card.apply.setAttribute('aria-pressed',String(selected));card.apply.disabled=selected||card.turn.valid===false;if(selected)card.apply.title='This saved prompt feeds Spell Scroll '+targets.value+'. Run the image workflow to use it.';}
+        }
+    }
+    function acceptActive(value,scroll){appliedState=value;activeScroll=scroll;refreshAppliedCards();}
     async function activePrompt(){
-        if(!targets.value){activeTitle.textContent='Active prompt: add a Spell Scroll node';activePreview.textContent='Connect Spell Scroll.prompt to your positive encoder. Chat is independent.';return;}
-        const requested=targets.value;try{const r=await api.fetchApi('/prompt_mage/grimoire/scroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scroll_id:requested})});if(!r.ok)throw Error();const v=(await r.json()).active;if(targets.value!==requested)return;activeTitle.textContent=v?'Active prompt: '+v.title+' · response '+(v.response_index+1):'Active prompt: none applied';activePreview.textContent=v?.text||'Choose Use this prompt on an assistant response. Chatting will not replace it.';}catch{activeTitle.textContent='Could not load active prompt';}
+        const version=++activeVersion;
+        if(!targets.value){acceptActive(null,'');activeTitle.textContent='Active prompt: add a Spell Scroll node';activePreview.textContent='Connect Spell Scroll.prompt to your positive encoder. Chat is independent.';return;}
+        const requested=targets.value;if(requested!==activeScroll)acceptActive(null,requested);
+        try{const r=await api.fetchApi('/prompt_mage/grimoire/scroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scroll_id:requested})});if(!r.ok)throw Error();const v=(await r.json()).active;if(targets.value!==requested||version!==activeVersion)return;acceptActive(v,requested);activeTitle.textContent=v?'Active prompt: '+v.title+' · response '+(v.response_index+1):'Active prompt: none applied';activePreview.textContent=v?.text||'Choose Use this prompt on an assistant response. Chatting will not replace it.';}catch{if(version!==activeVersion)return;acceptActive(null,requested);activeTitle.textContent='Could not load active prompt';}
     }
     targets.addEventListener('change',()=>{node.properties.mage_scroll_id=targets.value;void activePrompt();});
     async function applyResponse(index,text,chapter,mode){
-        if(busy)return;destinations();if(!targets.value){status.textContent='Add a Spell Scroll node first and connect its prompt output to the image encoder.';return;}
-        try{const r=await api.fetchApi('/prompt_mage/grimoire/scroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apply:true,scroll_id:targets.value,conversation_id:chapter,index,text,mode:mode||field('output_selection')?.value||'Latest response',field:field('json_field')?.value||''})});const v=await r.json();if(!r.ok)throw Error(v.error);status.textContent='Prompt applied. Run the image workflow to use it; no assistant call is needed.';await activePrompt();}catch(error){status.textContent='Could not apply prompt: '+error.message;}
+        if(busy||applying)return;destinations();if(!targets.value){status.textContent='Add a Spell Scroll node first and connect its prompt output to the image encoder.';return;}
+        const destination=targets.value;applying=true;status.textContent='Applying prompt…';
+        try{const r=await api.fetchApi('/prompt_mage/grimoire/scroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apply:true,scroll_id:destination,conversation_id:chapter,index,text,mode:mode||field('output_selection')?.value||'Latest response',field:field('json_field')?.value||''})});const v=await r.json();if(!r.ok)throw Error(v.error);if(targets.value===destination){++activeVersion;acceptActive(v.active,destination);activeTitle.textContent='Active prompt: '+(v.active?.title||'selected reply');activePreview.textContent=v.active?.text||'';}else void activePrompt();status.textContent=targets.value===destination?'':'Prompt applied to '+destination+'.';}catch(error){status.textContent='Could not apply prompt: '+error.message;}finally{applying=false;}
     }
-    let latest='', busy=false, requestVersion=0, layout, pendingEdit=null, attachmentUI, queuedFiles=[], queuedText='', chatJob=null;const actions=new Map();
+    let latest='', busy=false, requestVersion=0, layout, pendingEdit=null, attachmentUI, queuedFiles=[], queuedText='', chatJob=null, appliedState=null, activeScroll='', activeVersion=0, applying=false;let cards=[];const actions=new Map();
     function render(value) {
-        history.replaceChildren();
+        history.replaceChildren();cards=[];
         for(const [index,turn] of (value.turns||[]).entries()) {
             const item=document.createElement('div');item.className='gm-message '+(turn.role==='user'?'gm-user':'gm-assistant');
             const role=document.createElement('small');role.className='gm-role';role.textContent=turn.role==='user'?'You':'Grimoire';item.append(role);
@@ -69,11 +83,13 @@ export function installGrimoire(node) {
             const action=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>{if(label==='Copy'||!busy)return fn();});tools.append(b);return b;};
             action(turn.prompt_text?'Copy prompt':'Copy',()=>void copy(turn.prompt_text||display));
             const chapter=field('conversation_id').value;
+            const card=turn.role==='assistant'?{item,index,turn,chapter,baseClass:item.className}:null;
             const branch=()=>index>=value.turns.length-(turn.role==='user'?2:1)||window.confirm('This replaces later messages in this chat after the edit succeeds. The applied Spell Scroll stays unchanged. Continue?');
             if(turn.role==='user'){
                 action('Edit',()=>{if(!branch())return;pendingEdit={index,original:turn.content,chapter,files:turn.attachments||[]};composer.value=display;void attachmentUI?.reuse(turn.attachments);layout?.setEditing(true);composer.focus?.();status.textContent='Editing your message · Send edited message makes a new request.';});
                 action('Resend',()=>{if(branch())void run('Edit message',display,index,turn.content,turn.attachments||[]);});
             }else{
+                card.badge=document.createElement('span');card.badge.className='gm-applied-badge';card.badge.hidden=true;role.append(card.badge);
                 action('Retry',()=>{const previous=value.turns[index-1];if(previous?.role==='user'&&branch())void run('Edit message',previous.message??previous.content,index-1,previous.content,previous.attachments||[]);});
                 action('Edit',()=>{
                     if(!branch())return;
@@ -85,10 +101,10 @@ export function installGrimoire(node) {
                 if(turn.format_error){const note=document.createElement('small');note.className='gm-format-note';note.textContent='Prompt not ready: '+turn.format_error;item.append(note);}
                 if(turn.prompt_text||turn.mode==='MOSS JSON layout'||field('output_selection')?.value!=='MOSS JSON layout'){
                     const apply=action('Use this prompt',()=>void applyResponse(index,turn.content,chapter,turn.mode));
-                    apply.disabled=turn.valid===false;if(turn.valid===false)apply.title='Edit this reply to keep one complete valid prompt, or retry.';
+                    card.apply=apply;apply.disabled=turn.valid===false;if(turn.valid===false)apply.title='Edit this reply to keep one complete valid prompt, or retry.';
                 }
             }
-            item.append(tools);history.append(item);
+            item.append(tools);history.append(item);if(card)cards.push(card);
         }
         if(!(value.turns||[]).length){const empty=document.createElement('div');empty.className='gm-empty';empty.textContent='✦\nWhat would you like to create?\nStart a conversation, or open a saved chat above.';history.append(empty);}
         const lastReply=[...(value.turns||[])].reverse().find(t=>t.role==='assistant');latest=lastReply?.prompt_text||lastReply?.content||'';
@@ -96,7 +112,7 @@ export function installGrimoire(node) {
         for(const [name,content] of Object.entries(value.settings||{}))if(field(name)&&name!=='conversation_id')field(name).value=content;
         status.textContent=value.report?.compacted?'Older turns compacted · inspect the summary':'';
         if(value.report?.note)status.textContent+=(status.textContent?' · ':'')+value.report.note;
-        history.scrollTop=history.scrollHeight;controls();
+        refreshAppliedCards();history.scrollTop=history.scrollHeight;controls();
     }
     async function listChats(){
         try{const r=await api.fetchApi('/prompt_mage/grimoire/chats',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(!r.ok)throw Error();const value=await r.json();

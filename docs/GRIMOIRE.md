@@ -34,6 +34,10 @@ Bare JSON is displayed as a formatted code block with Copy code. Safe Markdown i
 
 **Compact interface (1.19.2):** open **Applied prompt** beside Style to inspect the Spell Scroll destination and saved prompt. It starts collapsed. Style help and keyboard shortcuts are hover tips; idle message counts are hidden, while working/error feedback remains visible. The shorter composer and combined header leave more room for messages at the same node size.
 
+**Applied-prompt glow (1.22):** the response currently applied to the selected Spell Scroll has a gold border, amethyst glow, **Applied** badge and pressed Applied button. It follows the saved snapshot rather than the newest message. Stable message identities keep the marker on its source when conversation compaction shifts message positions. Editing/regenerating that reply does not mark a different version as applied; a snapshot from another chat is shown only in Applied prompt until its source chat is open. The glow restores when history loads. A failed state lookup clears the visual marker rather than guessing. Changes made elsewhere become visible on the next history/chat refresh.
+
+The fantasy spellbook theme uses only local CSS and system fonts. Text and JSON remain readable, ornamentation does not intercept clicks, and the compact controls preserve chat space. Reduced-motion preferences disable the slow glow animation while retaining the border and label.
+
 ## Instructions and memory
 
 - **System prompt:** role and general rules; sent verbatim every turn.

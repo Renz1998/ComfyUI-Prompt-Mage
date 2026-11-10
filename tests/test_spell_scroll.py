@@ -34,3 +34,18 @@ class SpellScrollTests(unittest.TestCase):
         self.assertFalse(classes['DanbooruTagsTransformerGrimoire'].OUTPUT_NODE)
         self.assertTrue(classes['DanbooruTagsTransformerGrimoireTurn'].OUTPUT_NODE)
         self.assertFalse(classes['DanbooruTagsTransformerSpellScroll'].OUTPUT_NODE)
+
+    def test_source_identity_survives_conversation_compaction(self):
+        from dart_plugin.py.dart.grimoire import read_memory
+        with tempfile.TemporaryDirectory() as directory,patch.dict(sys.modules,{'folder_paths':SimpleNamespace(get_user_directory=lambda:directory)}):
+            path=memory_path('compact-chat')
+            save_memory(path,dict(version=1,summary='',turns=[dict(role='user',content='Old'),dict(role='assistant',content='Old reply'),dict(role='user',content='New'),dict(role='assistant',content='Chosen reply')]))
+            original=read_memory(path)
+            active=approve('main-scroll','compact-chat',3,'Chosen reply','Latest response','')
+            from dart_plugin.py.dart.spell_scroll import scroll_path
+            legacy=dict(active);legacy.pop('response_id');save_memory(scroll_path('main-scroll'),legacy)
+            active=active_scroll('main-scroll');self.assertEqual(active['response_id'],original['turns'][3]['id'])
+            original['turns']=original['turns'][-2:];save_memory(path,original)
+            shortened=read_memory(path)
+            self.assertEqual(active['response_id'],shortened['turns'][1]['id'])
+            self.assertNotEqual(active['response_index'],1)

@@ -31,6 +31,12 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     .grimoire-app .gm-applied{padding:6px 9px;min-height:34px;font-size:12px;flex-shrink:0}
     .grimoire-app .gm-applied[open]{flex-basis:100%;max-height:260px;overflow:auto}
     .grimoire-app .gm-applied select{width:100%;margin:10px 0;font-size:12px}.grimoire-app .gm-applied strong{font-size:12px}.grimoire-app .gm-applied pre{margin-bottom:0}
+    .grimoire-app.gm-dragging{outline:3px solid #c8a6ff;outline-offset:-4px}
+    .grimoire-app .gm-attachment-list{display:flex;gap:6px;flex-wrap:wrap;max-height:140px;overflow:auto;margin-bottom:8px}
+    .grimoire-app .gm-attachment{display:flex;align-items:center;gap:6px;background:#30364b;border:1px solid var(--line);border-radius:8px;padding:5px;max-width:100%}
+    .grimoire-app .gm-attachment span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;font-size:12px}.grimoire-app .gm-attachment img{width:40px;height:40px;object-fit:cover;border-radius:5px}
+    .grimoire-app .gm-attachment button{min-height:26px;padding:2px 7px}.grimoire-app .gm-saved-attachments{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:12px}
+    .grimoire-app .gm-saved-attachments img{display:block;max-width:192px;max-height:192px;margin:8px 0}.grimoire-app .gm-saved-attachments pre{max-height:160px;white-space:pre-wrap}.grimoire-app .gm-saved-attachments button{min-height:28px;padding:4px 8px}
     `;
     const button=(name,fn,cls='')=>{const b=make('button',cls,name);b.type='button';b.addEventListener('click',fn);return b;};
     const invoke=name=>()=>actions.get(name)?.();
@@ -68,17 +74,17 @@ export function layoutGrimoire(root, {title,status,chats,history,summary,compose
     const memory=make('details');memory.append(make('summary','','Conversation memory'));summary.style.cssText='';memory.append(summary,button('Edit summary',()=>{actions.get('Edit summary')?.();tab('Settings');}));
     const memoryEdit=make('details');memoryEdit.append(make('summary','','Advanced memory override'));control(memoryEdit,'summary_override','Summary override','Apply an edited summary on the next successful turn, then clear this field.');settings.append(memoryEdit);
     history.className='gm-history';history.style.cssText='';status.className='gm-status';
-    const composerBox=make('div','gm-composer');composer.style.cssText='';composer.rows=2;composer.title='Enter to send · Shift+Enter for a new line';composerBox.append(composer);
+    const composerBox=make('div','gm-composer'),attachmentMount=make('div','gm-attachments'),attachmentButtonMount=make('div');composer.style.cssText='';composer.rows=2;composer.title='Enter to send · Shift+Enter for a new line';composerBox.append(attachmentMount,composer);
     const footer=make('div','gm-footer');const send=button('Send',invoke('Send'),'gm-primary');const cancelEdit=button('Cancel edit',invoke('Cancel edit'));cancelEdit.hidden=true;
     send.title='Send a new assistant request.';
     const more=make('select');more.setAttribute('aria-label','Conversation actions');
     const blank=make('option','','More actions…');blank.value='';more.append(blank);
     for(const action of ['Next step','Regenerate','Copy latest','Refresh history','Refresh chats','Compact now','Clear conversation']){const option=make('option','',action==='Next step'?'Ask for next scene (new request)':action==='Regenerate'?'Rewrite reply (new request)':action==='Compact now'?'Compact memory (new request)':action);option.value=action;more.append(option);}
     more.addEventListener('change',()=>{actions.get(more.value)?.();more.value='';});
-    footer.append(send,cancelEdit,make('div','gm-spacer'),more);
+    footer.append(attachmentButtonMount,send,cancelEdit,make('div','gm-spacer'),more);
     chatPage.append(modeBar,history,memory,composerBox,footer);
     root.replaceChildren();root.append(style,header,tabs,status,chatPage,instructions,settings);tab('Chat');
-    return {keyMount,tab,setEditing(editing){cancelEdit.hidden=!editing;send.textContent=editing?'Send edited message':'Send';},sync(backend,busy,hasAnswer){
+    return {keyMount,attachmentMount,attachmentButtonMount,tab,setEditing(editing){cancelEdit.hidden=!editing;send.textContent=editing?'Send edited message':'Send';},sync(backend,busy,hasAnswer){
         provider.title=backend+' · Open settings';send.disabled=busy;
         for(const b of bindings){b.sync();b.row.hidden=b.name==='openai_model'?backend!=='OpenAI API':b.name==='deepseek_model'?backend!=='DeepSeek API':b.name==='local_model'?backend!=='Local Qwen':b.name==='json_field'?field('output_selection')?.value!=='JSON field':false;}
         keyHint.hidden=backend!=='Local Qwen';memory.hidden=!summary.value;

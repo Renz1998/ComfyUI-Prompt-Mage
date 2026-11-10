@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.20.0 — Grimoire attachments and multiple image inputs
+
+- Adds Attach, drag-and-drop and clipboard image paste, with thumbnail/file chips, removal, saved previews and Attach again. Uploading makes no model call; failed execution restores the queued draft.
+- Supports images, text/code, Markdown, JSON, CSV, DOCX text and text-based PDFs. Bounded excerpts are labelled; server-owned attachment IDs never accept arbitrary paths or execute files. Adds pypdf for PDF text extraction.
+- Connecting image reveals another image socket below it, through image_6, while preserving graph links. Supports six current images across sockets and attachments.
+- Sends multiple API images in one answer request, without separate per-image caption calls; includes up to two recent saved image references on follow-ups. Local Qwen captions current images separately.
+- Stores normalized images/extracted document text in the ComfyUI user directory, outside workflow JSON. Attachment history needs the same persistent server storage as chats.
+
+
 ## 1.19.2 — More room for Grimoire conversations
 
 - Combines the chat picker, New chat and Settings into one header row.

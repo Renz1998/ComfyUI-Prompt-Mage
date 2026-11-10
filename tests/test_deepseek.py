@@ -77,3 +77,8 @@ class DeepSeekTests(unittest.TestCase):
             self.assertIn(str(code), str(caught.exception))
             self.assertNotIn('secret', str(caught.exception))
             self.assertNotIn('private', str(caught.exception))
+
+    def test_multiple_reference_images_share_one_request(self):
+        _,_,opener=self.request(image=[torch.zeros(1,16,16,3),torch.ones(1,16,16,3)])
+        payload=json.loads(opener.open.call_args.args[0].data)
+        self.assertEqual([part['type'] for part in payload['messages'][1]['content']],['text','image_url','image_url'])

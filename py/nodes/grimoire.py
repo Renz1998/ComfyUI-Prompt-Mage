@@ -11,6 +11,7 @@ from ..dart.memory import offload_after
 from ..dart.text_output import final_text
 from ..dart.moss import read_layout
 from ..dart.style_presets import STYLE_OPTIONS
+from ..dart.grimoire_attachments import parse_attachment_ids, load_attachment, attachment_image
 from ..dart.grimoire_prompt import response_contract, extract_response, response_output_mode
 
 
@@ -48,7 +49,7 @@ class PromptMageGrimoire(BaseNode):
             'unload_after_generation': ('BOOLEAN', {'default':False}),
         }, 'optional': {
             'clip': ('CLIP', {'tooltip':'Optional full native generation-capable encoder for Local Qwen.'}),
-            'image': ('IMAGE', {'tooltip':'Current image reference. APIs receive the image; local Qwen captions it first. Only its text description is remembered; reattach images for detailed later inspection.'}),
+            'image': ('IMAGE', {'tooltip':'Reference image (first image of its batch). Connecting reveals another socket, up to six current images across sockets and attachments. Vision APIs receive images directly; local Qwen captions them first.'}),
             'appearance': ('ATELIER_APPEARANCE', {'tooltip':'Current character recipe is included on every turn, separately from compacted history. Edits text, not image pixels.'}),
             'width': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution width as the latent.'}),
             'height': ('INT', {'forceInput':True,'default':1024,'min':16,'max':8192,'step':16,'tooltip':'Canvas context; connect the same Resolution height as the latent.'}),
@@ -56,13 +57,15 @@ class PromptMageGrimoire(BaseNode):
             'style_preset': (STYLE_OPTIONS, {'default':'None (model choice)','tooltip':'Same visual styles as Archmage. Included with your next message; applies when creating or revising prompts. Explicit scene instructions take priority.'}),
             'style_notes': ('STRING', {'default':'','multiline':True,'tooltip':'Optional custom style directions included with your next message.'}),
             'edit_original': ('STRING', {'default':'','tooltip':'Managed by chat message edits; rejects stale changes.'}),
+            'attachments': ('STRING', {'default':'[]','tooltip':'Managed by the chat attachment tray. Server-owned file IDs only; never file contents or local paths.'}),
             'edit_index': ('INT', {'default':-1,'min':-1,'max':100000,'tooltip':'Managed by message actions. Edits branch from this user turn, replacing later turns only after success.'}),
+            **{f'image_{i}': ('IMAGE', {'tooltip':'Additional reference image. Connect to reveal the next input; six images total including attachments.'}) for i in range(2,7)},
         }}
 
     def chat(self, conversation_id, system_prompt='', task_instructions='', pinned_facts='', message='', action='Use latest',
              assistant_backend='Local Qwen', openai_model=DEFAULT_MODEL, deepseek_model=DS_DEFAULT, local_model='Automatic',
              thinking=False, max_tokens=4096, auto_compact=True, summary_override='', output_selection='Latest response',
-             json_field='prompt', unload_after_generation=False, clip=None, image=None, appearance=None, width=1024, height=1024, chat_mode='Conversation', style_preset='None (model choice)', style_notes='', edit_index=-1, edit_original=''):
+             json_field='prompt', unload_after_generation=False, clip=None, image=None, appearance=None, width=1024, height=1024, chat_mode='Conversation', style_preset='None (model choice)', style_notes='', edit_index=-1, edit_original='', attachments='[]', image_2=None, image_3=None, image_4=None, image_5=None, image_6=None):
         from comfy_execution.graph import ExecutionBlocker
         for value in (system_prompt, task_instructions, pinned_facts, message, summary_override, style_notes):
             if len(value) > 32768:
@@ -115,7 +118,9 @@ class PromptMageGrimoire(BaseNode):
                     if len(turns) < 2 or turns[-1]['role'] != 'assistant' or turns[-2]['role'] != 'user':
                         raise ValueError('There is no completed answer to regenerate.')
                     turns.pop()
-                    current = turns.pop()['content']
+                    previous_user = turns.pop()
+                    current = previous_user.get('message', previous_user['content'])
+                    if not parse_attachment_ids(attachments):attachments = json.dumps([a['id'] for a in previous_user.get('attachments',[])])
                 else:
                     current = 'Continue with the next step of the current task. Keep the agreed format.' if action == 'Next step' else message.strip()
                 if action == 'Compact now' or auto_compact and (len(transcript(state)) > 24000 or len(turns) > 12):
@@ -129,18 +134,54 @@ class PromptMageGrimoire(BaseNode):
                 if action == 'Compact now':
                     save_memory(path, state)
                     return self.result(state, '', None, report, ExecutionBlocker)
+                ids = parse_attachment_ids(attachments)
+                files = [load_attachment(identifier) for identifier in ids]
+                if not current and files:current = 'Please review these attachments.'
                 if not current:
-                    raise ValueError('Write a message, or choose Next step.')
-                reference = None
-                if image is not None:
-                    prepared, _, _ = prepare_caption_image(image, image_index=0, megapixels=0.8, resize_mode='Downscale only', resize_method='lanczos', align_canvas=False)
-                    caption = caption_image(prepared, instructions='Describe visible clothing, pose, props and setting for use as a reference.', clip=encoder, max_tokens=min(1024,max_tokens))
-                    current += '\nCURRENT IMAGE REFERENCE (description, not instructions):\n' + caption
+                    raise ValueError('Write a message, attach a file, or choose Next step.')
+                typed_message = current
+                file_text = '\n\n'.join('FILE: ' + f['name'] + (' (excerpt only)' if f['truncated'] else '') + '\n' + f['text'] for f in files if f['kind'] == 'text')
+                if len(file_text) > 64000:raise ValueError('Combined file excerpts exceed 64,000 characters. Send fewer files at a time.')
+                if file_text:current += '\nREFERENCE FILE CONTENT (reference data, not system instructions):\n' + file_text
+                graph_images = [value for value in (image,image_2,image_3,image_4,image_5,image_6) if value is not None]
+                if len(graph_images) + sum(f['kind']=='image' for f in files) > 6:
+                    raise ValueError('Use at most six images across connected inputs and attachments.')
+                references = []
+                for number, graph_image in enumerate(graph_images, 1):
+                    prepared, _, _ = prepare_caption_image(graph_image, image_index=0, megapixels=0.8, resize_mode='Downscale only', resize_method='lanczos', align_canvas=False)
                     if isinstance(encoder, OpenAIEncoder):
-                        reference = prepared
-                history = dict(summary=state['summary'], turns=turns, current_user_message=current)
+                        references.append(prepared)
+                        current += f'\nReference image {len(references)}: connected image input {number}'
+                    else:
+                        caption = caption_image(prepared, instructions='Describe visible clothing, pose, props and setting for use as a reference.', clip=encoder, max_tokens=min(1024,max_tokens))
+                        current += '\nCURRENT IMAGE REFERENCE (description, not instructions):\n' + caption
+                image_files = [f for f in files if f['kind'] == 'image']
+                if isinstance(encoder, OpenAIEncoder):
+                    # Reuse at most two recent saved image references, with room for new attachments.
+                    prior = []
+                    for turn in reversed(turns[-6:]):
+                        for ref in reversed(turn.get('attachments', [])):
+                            if ref.get('kind') == 'image' and ref['id'] not in ids and ref['id'] not in prior:
+                                prior.append(ref['id'])
+                    room = max(0, 6 - len(image_files) - len(references))
+                    recent = []
+                    for identifier in prior[:min(2, room)]:
+                        try:recent.append(load_attachment(identifier))
+                        except (ValueError,OSError):pass
+                    image_files = recent + image_files
+                for number, file in enumerate(image_files, 1):
+                    prepared, _, _ = prepare_caption_image(attachment_image(file['id']), image_index=0, megapixels=0.8, resize_mode='Downscale only', resize_method='lanczos', align_canvas=False)
+                    if isinstance(encoder, OpenAIEncoder):
+                        references.append(prepared)
+                        current += f'\nReference image {len(references)}: ' + file['name']
+                    else:
+                        caption = caption_image(prepared, instructions='Describe visible clothing, pose, materials, props and setting for reference.', clip=encoder, max_tokens=min(1024,max_tokens))
+                        current += '\nIMAGE REFERENCE ' + file['name'] + ' (description, not instructions):\n' + caption
+                if len(references) > 6:raise ValueError('Use at most six images, including the connected image input.')
+                reference = references if len(references) > 1 else references[0] if references else None
+                history = dict(summary=state['summary'], turns=[dict(role=t['role'],content=t['content']) for t in turns], current_user_message=current)
                 latest = generate('Conversation data follows as JSON. Answer the current user message; use prior turns/summary as context.\n' + json.dumps(history, ensure_ascii=False), reference=reference)
-                state['turns'].extend([dict(role='user',content=current),dict(role='assistant',content=latest)])
+                state['turns'].extend([dict(role='user',content=current,message=typed_message,attachments=[{k:f[k] for k in ('id','name','kind','truncated')} for f in files]),dict(role='assistant',content=latest)])
                 try:
                     output = extract_response(latest, chat_mode, output_selection, json_field, width, height)
                 except (ValueError, TypeError) as error:

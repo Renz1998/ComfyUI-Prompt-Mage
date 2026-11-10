@@ -93,5 +93,10 @@ class OpenAITests(unittest.TestCase):
             OpenAIEncoder()
         with self.assertRaisesRegex(ValueError,'dropdown'):OpenAIEncoder(model='unknown-model')
 
+    def test_multiple_reference_images_share_one_request(self):
+        _,_,request=self.request(image=[torch.zeros(1,16,16,3),torch.ones(1,16,16,3)])
+        content=json.loads(request.data)['input'][0]['content']
+        self.assertEqual([p['type'] for p in content],['input_text','input_image','input_image'])
+
 
 if __name__=='__main__':unittest.main()

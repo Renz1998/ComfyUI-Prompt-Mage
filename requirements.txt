@@ -2,3 +2,5 @@ transformers>=4.46,<6
 # Use the PyTorch build supplied by ComfyUI; do not replace it.
 
 huggingface-hub>=0.26
+
+pypdf>=5,<7

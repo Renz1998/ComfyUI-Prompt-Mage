@@ -76,7 +76,8 @@ class OpenAIEncoder:
             raise ValueError('API token limit must be 128–16384 per request, including reasoning.')
         content = [{'type': 'input_text', 'text': prompt}]
         if image is not None:
-            content.append({'type': 'input_image', 'image_url': image_data_url(image), 'detail': 'auto'})
+            for reference in image if isinstance(image, (list, tuple)) else [image]:
+                content.append({'type': 'input_image', 'image_url': image_data_url(reference), 'detail': 'auto'})
         effort = 'medium' if thinking else ('low' if self.model in ('gpt-6.1-sol', 'gpt-6-astra') else 'none')
         payload = dict(model=self.model, instructions=system_prompt,
                        input=[{'role': 'user', 'content': content}], store=False,

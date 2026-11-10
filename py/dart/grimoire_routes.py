@@ -12,6 +12,46 @@ def register_grimoire_routes():
     if getattr(PromptServer, 'instance', None) is None:
         return False
 
+    @PromptServer.instance.routes.post('/prompt_mage/grimoire/attachment')
+    async def upload_attachment(request):
+        if not trusted_request(request):
+            return web.json_response({'error':'Use this ComfyUI page.'},status=403)
+        from .grimoire_attachments import MAX_BYTES, save_attachment
+        import asyncio
+        try:
+            if request.content_type != 'multipart/form-data':
+                raise ValueError('Choose a file with the attachment button.')
+            reader = await request.multipart()
+            part = await reader.next()
+            if part is None or part.name != 'file' or not part.filename:
+                raise ValueError('No file selected.')
+            raw = bytearray()
+            while chunk := await part.read_chunk(65536):
+                raw.extend(chunk)
+                if len(raw) > MAX_BYTES:
+                    raise ValueError('Each attachment must be under 16 MB.')
+            value = await asyncio.to_thread(save_attachment,part.filename,bytes(raw))
+            return web.json_response(value,headers={'Cache-Control':'no-store'})
+        except ValueError as error:
+            return web.json_response({'error':str(error)},status=400)
+        except Exception:
+            return web.json_response({'error':'Could not read this file. Check its format and server storage permissions.'},status=400)
+
+    @PromptServer.instance.routes.post('/prompt_mage/grimoire/attachment/read')
+    async def read_attachment(request):
+        if not trusted_request(request):
+            return web.json_response({'error':'Use this ComfyUI page.'},status=403)
+        from .grimoire_attachments import load_attachment, public_attachment
+        import asyncio
+        try:
+            if request.content_type != 'application/json' or not request.content_length or request.content_length > 4096:
+                raise ValueError('Invalid attachment request.')
+            data = await request.json()
+            value = await asyncio.to_thread(load_attachment,data['id'])
+            return web.json_response(public_attachment(value),headers={'Cache-Control':'no-store'})
+        except (ValueError,KeyError,TypeError,OSError):
+            return web.json_response({'error':'Attachment unavailable. Attach the file again.'},status=400)
+
     @PromptServer.instance.routes.get('/prompt_mage/grimoire/capabilities')
     async def capabilities(request):
         import inspect

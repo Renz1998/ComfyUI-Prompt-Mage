@@ -50,7 +50,9 @@ class DeepSeekEncoder(OpenAIEncoder):
             raise ValueError('DeepSeek Pro is text-only here. Select DeepSeek Flash for reference images.')
         content = prompt
         if image is not None:
-            content = [{'type': 'text', 'text': prompt}, {'type': 'image_url', 'image_url': {'url': image_data_url(image)}}]
+            content = [{'type': 'text', 'text': prompt}]
+            for reference in image if isinstance(image, (list, tuple)) else [image]:
+                content.append({'type': 'image_url', 'image_url': {'url': image_data_url(reference)}})
         payload = dict(model=self.model, messages=[{'role':'system','content':system_prompt}, {'role':'user','content':content}],
                        stream=False, max_tokens=max_length, thinking={'type':'enabled' if thinking else 'disabled'})
         if thinking:

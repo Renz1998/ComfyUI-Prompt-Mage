@@ -1,15 +1,18 @@
-import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.19.2';
-import { layoutGrimoire } from './grimoire_layout.mjs?v=1.19.2';
-import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.19.2';
-import { renderMarkdown } from './grimoire_markdown.mjs?v=1.19.2';
+import { ensureImageInputs } from './grimoire_images.mjs?v=1.20.0';
+import { installAttachments } from './grimoire_attachments.mjs?v=1.20.0';
+import { ensureCanvasInputs } from './grimoire_sockets.mjs?v=1.20.0';
+import { layoutGrimoire } from './grimoire_layout.mjs?v=1.20.0';
+import { chatPrompt, queueChat } from './grimoire_queue.mjs?v=1.20.0';
+import { renderMarkdown } from './grimoire_markdown.mjs?v=1.20.0';
 import { app } from '../../scripts/app.js';
 import { api } from '../../scripts/api.js';
-import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.19.2';
-import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.19.2';
+import { installOpenAIKeyWidget, refreshOpenAIKeyWidget } from './openai_key.mjs?v=1.20.0';
+import { installDeepSeekKeyWidget, refreshDeepSeekKeyWidget } from './deepseek_key.mjs?v=1.20.0';
 
 // Plain text only: model/user messages never become executable HTML.
 export function installGrimoire(node) {
     ensureCanvasInputs(node);
+    ensureImageInputs(node);
     const chapterId=()=>{
         if(typeof crypto.randomUUID==='function')return crypto.randomUUID();
         const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);
@@ -48,24 +51,25 @@ export function installGrimoire(node) {
         if(busy)return;destinations();if(!targets.value){status.textContent='Add a Spell Scroll node first and connect its prompt output to the image encoder.';return;}
         try{const r=await api.fetchApi('/prompt_mage/grimoire/scroll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apply:true,scroll_id:targets.value,conversation_id:chapter,index,text,mode:mode||field('output_selection')?.value||'Latest response',field:field('json_field')?.value||''})});const v=await r.json();if(!r.ok)throw Error(v.error);status.textContent='Prompt applied. Run the image workflow to use it; no assistant call is needed.';await activePrompt();}catch(error){status.textContent='Could not apply prompt: '+error.message;}
     }
-    let latest='', busy=false, requestVersion=0, layout, pendingEdit=null;const actions=new Map();
+    let latest='', busy=false, requestVersion=0, layout, pendingEdit=null, attachmentUI, queuedFiles=[], queuedText='', chatJob=null;const actions=new Map();
     function render(value) {
         history.replaceChildren();
         for(const [index,turn] of (value.turns||[]).entries()) {
             const item=document.createElement('div');item.className='gm-message '+(turn.role==='user'?'gm-user':'gm-assistant');
             const role=document.createElement('small');role.className='gm-role';role.textContent=turn.role==='user'?'You':'Grimoire';item.append(role);
             const copy=async text=>{try{await navigator.clipboard.writeText(text);status.textContent='Copied';}catch{status.textContent='Clipboard unavailable · select the text to copy';}};
-            renderMarkdown(item,turn.content,copy);
+            const display=turn.role==='user'?(turn.message??turn.content):turn.content;
+            renderMarkdown(item,display,copy);attachmentUI?.renderSaved(item,turn.attachments);
             const tools=document.createElement('div');tools.className='gm-message-actions';
             const action=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',()=>{if(label==='Copy'||!busy)return fn();});tools.append(b);return b;};
-            action('Copy',()=>void copy(turn.content));
+            action('Copy',()=>void copy(display));
             const chapter=field('conversation_id').value;
             const branch=()=>index>=value.turns.length-(turn.role==='user'?2:1)||window.confirm('This replaces later messages in this chat after the edit succeeds. The applied Spell Scroll stays unchanged. Continue?');
             if(turn.role==='user'){
-                action('Edit',()=>{if(!branch())return;pendingEdit={index,original:turn.content,chapter};composer.value=turn.content;layout?.setEditing(true);composer.focus?.();status.textContent='Editing your message · Send edited message makes a new request.';});
-                action('Resend',()=>{if(branch())void run('Edit message',turn.content,index,turn.content);});
+                action('Edit',()=>{if(!branch())return;pendingEdit={index,original:turn.content,chapter,files:turn.attachments||[]};composer.value=display;void attachmentUI?.reuse(turn.attachments);layout?.setEditing(true);composer.focus?.();status.textContent='Editing your message · Send edited message makes a new request.';});
+                action('Resend',()=>{if(branch())void run('Edit message',display,index,turn.content,turn.attachments||[]);});
             }else{
-                action('Retry',()=>{const previous=value.turns[index-1];if(previous?.role==='user'&&branch())void run('Edit message',previous.content,index-1,previous.content);});
+                action('Retry',()=>{const previous=value.turns[index-1];if(previous?.role==='user'&&branch())void run('Edit message',previous.message??previous.content,index-1,previous.content,previous.attachments||[]);});
                 action('Edit',()=>{
                     if(!branch())return;
                     const editor=document.createElement('textarea');editor.value=turn.content;editor.setAttribute('aria-label','Edit assistant response');item.append(editor);
@@ -95,21 +99,23 @@ export function installGrimoire(node) {
             for(const c of value.chats||[])add(c.id,c.title+' · '+new Date(c.updated*1000).toLocaleDateString());chats.value=current;
         }catch{status.textContent='Could not list saved chats. Update/restart ComfyUI.';}
     }
-    chats.addEventListener('change',()=>{if(busy){chats.value=field('conversation_id').value;return;}field('conversation_id').value=chats.value;field('summary_override').value='';composer.value='';pendingEdit=null;layout?.setEditing(false);void load();});
+    chats.addEventListener('change',()=>{if(busy){chats.value=field('conversation_id').value;return;}field('conversation_id').value=chats.value;field('summary_override').value='';composer.value='';attachmentUI?.clear();pendingEdit=null;layout?.setEditing(false);void load();});
     composer.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();void run('Send');}});
     async function load() {
         const version=++requestVersion;
         try {const response=await api.fetchApi('/prompt_mage/grimoire/history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:field('conversation_id').value})});if(!response.ok){let error={};try{error=await response.json();}catch{}throw Error('HTTP '+response.status+': '+(error.error||'History endpoint unavailable; restart the updated backend.'));}const value=await response.json();if(version===requestVersion){render(value);controls();}await listChats();}
         catch(error){status.textContent='History unavailable · '+(error.message||'Check the server connection.');}
     }
-    async function run(action, text=composer.value, editIndex=-1, original='') {
-        if(busy)return;
+    async function run(action, text=composer.value, editIndex=-1, original='', files=null) {
+        if(busy||attachmentUI?.busy)return;
+        const attachmentIds=['Send','Edit message','Next step'].includes(action)?(files?files.map(f=>f.id):(attachmentUI?.ids()||[])):[];
+        if(!text.trim()&&attachmentIds.length)text='Please review these attachments.';
         if(action==='Send'&&pendingEdit){if(pendingEdit.chapter!==field('conversation_id').value){status.textContent='Chat changed; cancel the edit first.';return;}action='Edit message';editIndex=pendingEdit.index;original=pendingEdit.original;}
         if(action==='Clear conversation'&&!window.confirm('Clear this chapter’s saved history and summary? Configured instructions and pinned facts remain.'))return;
         if(['Send','Edit message'].includes(action)&&!text.trim()){status.textContent='Write a message first.';return;}
         busy=true;controls();status.textContent='Queueing '+action+'…';field('message').value=text;
-        try{const snapshot=await app.graphToPrompt();const job=chatPrompt(snapshot,node.id,action,text);job.output[String(node.id)].inputs.edit_index=editIndex;job.output[String(node.id)].inputs.edit_original=original;const result=await queueChat(api,job,node.id);if(!result?.prompt_id||Object.keys(result.node_errors||{}).length)throw Error();
-            status.textContent='Waiting for Grimoire…';
+        try{const snapshot=await app.graphToPrompt();const job=chatPrompt(snapshot,node.id,action,text);job.output[String(node.id)].inputs.attachments=JSON.stringify(attachmentIds);job.output[String(node.id)].inputs.edit_index=editIndex;job.output[String(node.id)].inputs.edit_original=original;const result=await queueChat(api,job,node.id);if(!result?.prompt_id||Object.keys(result.node_errors||{}).length)throw Error();
+            chatJob=result.prompt_id;queuedFiles=attachmentIds;queuedText=text;status.textContent='Waiting for Grimoire…';attachmentUI?.consume(attachmentIds);
             if(['Send','Edit message'].includes(action)){pendingEdit=null;layout?.setEditing(false);const pending=document.createElement('div');pending.className='gm-message gm-user';pending.textContent=text;history.append(pending);composer.value='';history.scrollTop=history.scrollHeight;}} catch(error){busy=false;controls();status.textContent='Could not queue: '+(error?.message||'Check ComfyUI status.');}
     }
     function button(label, callback) {actions.set(label,callback);const b=document.createElement('button');b.type='button';b.textContent=label;b.addEventListener('click',callback);buttons.append(b);}
@@ -119,18 +125,20 @@ export function installGrimoire(node) {
     button('Regenerate',()=>void run('Regenerate'));
     button('Compact now',()=>void run('Compact now'));
     button('Clear conversation',()=>void run('Clear conversation'));
-    button('New chat',()=>{if(busy){status.textContent='Wait for this queued turn to finish or cancel it first.';return;}field('conversation_id').value=chapterId();field('summary_override').value='';composer.value='';pendingEdit=null;layout?.setEditing(false);render({turns:[],summary:''});void load();});
+    button('New chat',()=>{if(busy){status.textContent='Wait for this queued turn to finish or cancel it first.';return;}field('conversation_id').value=chapterId();field('summary_override').value='';composer.value='';attachmentUI?.clear();pendingEdit=null;layout?.setEditing(false);render({turns:[],summary:''});void load();});
     button('Refresh history',()=>void load());
     button('Copy latest',async()=>{try{await navigator.clipboard.writeText(latest);status.textContent='Latest response copied';}catch{status.textContent='Clipboard unavailable · select and copy the response';}});
     button('Edit summary',()=>{field('summary_override').value=summary.value;status.textContent='Edit Summary override below; it is applied on the next successful run.';});
     button('Refresh chats',()=>void listChats());
     layout=layoutGrimoire(root,{title,status,chats,history,summary,composer,actions,field,targets,active,changed:name=>{controls();if(['style_preset','style_notes'].includes(name))status.textContent='Style updated · applies with your next message; no request sent.';}});
+    attachmentUI=installAttachments({root,mount:layout.attachmentMount,buttonMount:layout.attachmentButtonMount,api,notify:text=>{status.textContent=text;},changed:()=>controls()});
     // An unset maximum lets ComfyUI allocate extra node height to the chat.
     node.addDOMWidget('grimoire_chat','GRIMOIRE_CHAT',root,{serialize:false,getMinHeight:()=>560,hideOnZoom:true}).serialize=false;
     const chatWidget=node.widgets?.find(w=>w.name==='grimoire_chat');if(chatWidget)node.widgets=[chatWidget,...node.widgets.filter(w=>w!==chatWidget)];
     installOpenAIKeyWidget(node,api,layout.keyMount);installDeepSeekKeyWidget(node,api,layout.keyMount);
     function controls() {
         ensureCanvasInputs(node);
+        if(field('attachments')){field('attachments').value='[]';field('attachments').serialize=false;}
         if(field('action'))field('action').value='Use latest';
         if(field('chat_mode'))field('chat_mode').value='Conversation';
         const backend=field('assistant_backend')?.value;
@@ -141,7 +149,7 @@ export function installGrimoire(node) {
             if(widget.element?.style)widget.element.style.display='none';
             if(widget.inputEl?.style)widget.inputEl.style.display='none';
         }
-        layout?.sync(backend,busy,Boolean(latest));
+        layout?.sync(backend,busy||Boolean(attachmentUI?.busy),Boolean(latest));
         refreshOpenAIKeyWidget(node);refreshDeepSeekKeyWidget(node);
         const minimum=node.computeSize();
         node.setSize([Math.max(650,node.size[0],minimum[0]),Math.max(node.size[1],minimum[1])]);node.setDirtyCanvas(true,true);
@@ -150,12 +158,13 @@ export function installGrimoire(node) {
     field('assistant_backend').callback=function(...args){callback?.apply(this,args);controls();};
     const idCallback=field('conversation_id').callback;
     field('conversation_id').callback=function(...args){idCallback?.apply(this,args);void load();};
-    const executed=node.onExecuted;node.onExecuted=function(message){busy=false;executed?.apply(this,arguments);if(message.grimoire?.[0]){render(message.grimoire[0]);void listChats();}};
-    const failed=()=>{busy=false;controls();status.textContent='Execution ended or failed. Review the ComfyUI error before retrying.';};
+    const executed=node.onExecuted;node.onExecuted=function(message){busy=false;queuedFiles=[];queuedText='';chatJob=null;executed?.apply(this,arguments);if(message.grimoire?.[0]){render(message.grimoire[0]);void listChats();}};
+    const failed=event=>{if(!chatJob||(event?.detail?.prompt_id&&event.detail.prompt_id!==chatJob))return;busy=false;chatJob=null;if(!composer.value)composer.value=queuedText;void attachmentUI?.reuse(queuedFiles.map(id=>({id})));queuedFiles=[];queuedText='';controls();status.textContent='Execution ended or failed. Review the ComfyUI error before retrying.';};
     api.addEventListener('execution_error',failed);api.addEventListener('execution_interrupted',failed);
-    const removed=node.onRemoved;node.onRemoved=function(){api.removeEventListener('execution_error',failed);api.removeEventListener('execution_interrupted',failed);removed?.apply(this,arguments);};
+    const removed=node.onRemoved;node.onRemoved=function(){attachmentUI?.destroy();api.removeEventListener('execution_error',failed);api.removeEventListener('execution_interrupted',failed);removed?.apply(this,arguments);};
+    const connections=node.onConnectionsChange;node.onConnectionsChange=function(){connections?.apply(this,arguments);ensureImageInputs(this);};
     const serialized=node.onSerialize;node.onSerialize=function(data){serialized?.apply(this,arguments);data.properties ||= {};data.properties.mage_grimoire_size=Array.from(this.size);data.mage_grimoire_fields=Object.fromEntries((this.widgets||[]).filter(w=>w.serialize!==false).map(w=>[w.name,w.value]));};
-    const configured=node.onConfigure;node.onConfigure=function(data){const saved=data?.properties?.mage_grimoire_size||data?.size;configured?.apply(this,arguments);if(data?.mage_grimoire_fields){for(const [name,value]of Object.entries(data.mage_grimoire_fields))if(field(name))field(name).value=value;}else if(Array.isArray(data?.widgets_values)){legacyFields.forEach((name,i)=>{if(field(name)&&i<data.widgets_values.length)field(name).value=data.widgets_values[i];});for(const name of ['chat_mode','style_preset','style_notes','edit_original','edit_index'])if(field(name))field(name).value=fieldDefaults.get(name);for(const [i,name]of [[17,'width'],[18,'height']])if(field(name)&&Number.isFinite(data.widgets_values[i]))field(name).value=data.widgets_values[i];}if(Array.isArray(saved)&&saved.length===2&&saved.every(Number.isFinite))this.setSize(saved);ensureCanvasInputs(this);if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
+    const configured=node.onConfigure;node.onConfigure=function(data){const saved=data?.properties?.mage_grimoire_size||data?.size;configured?.apply(this,arguments);if(data?.mage_grimoire_fields){for(const [name,value]of Object.entries(data.mage_grimoire_fields))if(field(name))field(name).value=value;}else if(Array.isArray(data?.widgets_values)){legacyFields.forEach((name,i)=>{if(field(name)&&i<data.widgets_values.length)field(name).value=data.widgets_values[i];});for(const name of ['chat_mode','style_preset','style_notes','edit_original','edit_index'])if(field(name))field(name).value=fieldDefaults.get(name);for(const [i,name]of [[17,'width'],[18,'height']])if(field(name)&&Number.isFinite(data.widgets_values[i]))field(name).value=data.widgets_values[i];}if(Array.isArray(saved)&&saved.length===2&&saved.every(Number.isFinite))this.setSize(saved);ensureCanvasInputs(this);ensureImageInputs(this);if(!field('conversation_id').value)field('conversation_id').value=chapterId();controls();void load();};
     controls();Promise.resolve().then(controls);void load();
 }
 

@@ -10,7 +10,7 @@ export function connectionsFor(type, name, slotType, isOutput) {
     if (type===prefix+'Grimoire') {
         if (!isOutput && ['width','height'].includes(name)) return [node('Resolution',name)];
         if (!isOutput && name==='appearance') return [node('AppearanceOverrides',0)];
-        if (!isOutput && name==='image') return [{type:'LoadImage',slot:0},node('ImageBatchUpload',0)];
+        if (!isOutput && (name==='image'||/^image_[2-6]$/.test(name))) return [{type:'LoadImage',slot:0},node('ImageBatchUpload',0)];
         if (!isOutput && name==='clip') return [{type:'CLIPLoader',slot:0}];
         return isOutput ? [preview] : [];
     }

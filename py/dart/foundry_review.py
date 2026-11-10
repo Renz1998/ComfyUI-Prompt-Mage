@@ -5,7 +5,7 @@ POLICIES={'Relaxed':(65,35,55),'Balanced':(75,50,65),'Strict':(90,75,80)}
 def assessment(review,criteria,tolerance='Balanced'):
     threshold,minimum,quality=POLICIES[tolerance]
     checks=review['checks']
-    scores=[min(c.get('score',{'pass':100,'fail':20,'uncertain':50}[c['status']]),49 if c['status']=='fail' else 59 if c['status']=='uncertain' else 100) for c in checks]
+    scores=[min(c.get('score',{'pass':100,'fail':20,'partial':70,'uncertain':50}.get(c['status'],50)),49 if c['status']=='fail' else 85 if c['status']=='partial' else 59 if c['status']!='pass' else 100) for c in checks]
     match=round(sum(scores)/len(scores))
     reasons=[]
     if match<threshold:reasons.append(f'Prompt match {match}/100 is below {threshold}.')

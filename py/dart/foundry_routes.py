@@ -76,7 +76,8 @@ def register_foundry_routes():
                 if value['status']!='needs_attention':raise ValueError('Finish or recover the current job first.')
                 attempt=store.attempt_for(value,data['attempt_id'])
                 if not attempt.get('image') or attempt.get('review'):raise ValueError('Choose a captured image with an unfinished review.')
-                if value['usage']['calls']>=value['limits']['calls']:raise ValueError('Assistant-call budget reached.')
+                from .foundry_ai import cached_review_response
+                if value['usage']['calls']>=value['limits']['calls'] and not cached_review_response(identifier,attempt['id']):raise ValueError('Assistant-call budget reached.')
                 value['status']='reviewing';store.write(value)
                 return dict(run=store.public(value))
             if operation=='bind_job':
@@ -114,7 +115,10 @@ def register_foundry_routes():
             data=await request.json()
             if not isinstance(data,dict):raise ValueError('Expected a Foundry action.')
             if request.content_length>262144 and data.get('operation') not in ('approve_start','continue_auto','retry_auto'):raise ValueError('Invalid Foundry request size.')
-            result=await asyncio.to_thread(process,data)
+            if data.get('operation')=='retry_review':
+                from .foundry_runner import retry_saved_review
+                result=dict(run=await retry_saved_review(PromptServer.instance,data['id'],data.get('client_id',''),data.get('continue_run',True)))
+            else:result=await asyncio.to_thread(process,data)
             value=result.get('run')
             if value and value.get('automation_enabled') and data.get('operation') in ('approve_start','accept_continue','continue_auto','retry_auto','bind_job','resume') and value['status'] not in ('paused','stopped','complete','needs_attention'):
                 from .foundry_runner import start

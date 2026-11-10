@@ -110,7 +110,9 @@ async def run(server,run_id,poll=0.5):
         recipe=load_recipe(run_id)
         while True:
             with store.LOCK:value=store.read(run_id)
-            if not value.get('automation_enabled') or value['status'] in ('paused','stopped','complete','needs_attention'):return
+            if not value.get('automation_enabled') or value['status'] in ('paused','stopped','complete','needs_attention'):
+                notify(server,value)
+                return
             job_id=value.get('job_id')
             if job_active(server,job_id):await asyncio.sleep(poll);continue
             if job_id:
@@ -154,3 +156,27 @@ def start(server,run_id):
     task=asyncio.create_task(run(server,run_id));TASKS[run_id]=task
     task.add_done_callback(lambda done:TASKS.pop(run_id,None) if TASKS.get(run_id) is done else None)
     return task
+
+
+async def retry_saved_review(server,run_id,client_id='',continue_run=True):
+    """Recover only the saved review; never reserve another image attempt."""
+    from .foundry_ai import cached_review_response
+    with store.LOCK:
+        value=store.read(run_id)
+        if job_active(server,value.get('job_id')):raise ValueError('The current Foundry job has not finished yet.')
+        if value['status']!='needs_attention':raise ValueError('Choose a stopped run with an unfinished image review.')
+        if not value['attempts']:raise ValueError('This run has no image to review.')
+        attempt=value['attempts'][-1]
+        if not attempt.get('image') or attempt.get('review'):raise ValueError('Choose a captured image whose review is unfinished.')
+        if value['usage']['calls']>=value['limits']['calls'] and not cached_review_response(run_id,attempt['id']):raise ValueError('Assistant-call budget reached. The image is still saved.')
+        recipe=load_recipe(run_id)
+        if client_id:recipe['client_id']=str(client_id)[:128]
+        if not isinstance(continue_run,bool):raise ValueError('Choose whether to continue the sequence after review.')
+        if not continue_run:value['automation_enabled']=False
+        value['status']='reviewing';value['last_error']='';value.pop('job_id',None);store.write(value)
+    try:
+        await submit(server,run_id,attempt,recipe,'review_saved')
+        if value.get('automation_enabled'):start(server,run_id)
+        current=store.read(run_id);notify(server,current);return store.public(current)
+    except Exception as error:
+        store.fail(run_id,str(error),attempt['id']);notify(server,store.read(run_id));raise

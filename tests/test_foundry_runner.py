@@ -115,6 +115,18 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
     async def test_duplicate_start_returns_same_task(self):
         self.ready();self.gate=asyncio.Event();first=runner.start(self.server,self.id);self.assertIs(first,runner.start(self.server,self.id));first.cancel()
         await asyncio.gather(first,return_exceptions=True)
+    async def test_worker_review_error_is_broadcast_to_the_ui(self):
+        self.ready();events=[];self.server.send_sync=lambda name,payload:events.append(payload['foundry'][0])
+        async def failed_review(entry):
+            value=store.read(self.id);value['attempts'][-1].update(image=True,status='error');value.update(status='needs_attention',last_error='Image saved; use Review saved image.');store.write(value)
+            self.active.remove(entry);self.history[entry[1]]={'status':{'status_str':'error','completed':False}}
+        self.finish=failed_review;await runner.run(self.server,self.id,poll=0.001)
+        self.assertEqual(events[-1]['status'],'needs_attention');self.assertIn('Image saved',events[-1]['last_error']);self.assertEqual(len(self.submitted),1)
+    async def test_review_only_recovery_does_not_render_or_continue_old_scenes(self):
+        self.ready();attempt=store.reserve(self.id);value=store.read(self.id);value.update(status='needs_attention');value['attempts'][-1].update(image=True,status='error');store.write(value)
+        await runner.retry_saved_review(self.server,self.id,continue_run=False);await asyncio.sleep(0.001)
+        value=store.read(self.id);self.assertEqual(value['status'],'awaiting_approval');self.assertFalse(value['automation_enabled']);self.assertEqual(value['usage']['renders'],1)
+        self.assertEqual(self.submitted[0][4],['1']);self.assertEqual(self.submitted[0][2]['1']['class_type'],runner.FOUNDRY+'ReviewSaved')
     def test_recipe_rejects_unrelated_images_and_seedless_workflows(self):
         for change in ('prompt','seed','batch'):
             graph=workflow()

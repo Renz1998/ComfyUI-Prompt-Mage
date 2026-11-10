@@ -46,7 +46,9 @@ Runs, reviews and frozen prompts live under **ComfyUI user/prompt_mage/foundry/r
 
 **Pause** prevents the next submission; a current render/API call may finish. **Resume sequence** continues from saved progress and can review an already captured image without running diffusion again. **Stop** ends the run. These controls never globally interrupt someone else’s ComfyUI job. Cancel a current image through ComfyUI’s queue if needed.
 
-Provider errors, malformed replies, cancellation, exhausted retries and spending limits stop with a visible explanation. There are no automatic retries of failed API requests. **Review saved image** can retry an unfinished review without another render. Already submitted requests may still be billable. A server restart is different from closing the browser: reopen the saved run and resume/recover it explicitly; jobs lost from ComfyUI’s queue are not silently replayed.
+Provider errors, malformed replies, cancellation, exhausted retries and spending limits stop with a visible explanation. There are no automatic retries of failed API requests. **Review saved image** recovers an unfinished review without another render, then resumes an automatic sequence. Reviewer replies are saved privately under `foundry/reviews`, bound to the exact PNG hash. Recovery first tries reparsing that reply for free; if it is unusable, the explicit recovery action can make one fresh review request. Already submitted requests may still be billable. A server restart is different from closing the browser: reopen the saved run and resume/recover it explicitly; jobs lost from ComfyUI’s queue are not silently replayed.
+
+Common status variants (such as Passed or Partially met) and numeric strings are normalized. Partial matches can meet Relaxed/Balanced tolerance but cannot satisfy **! must-have** checks; Strict still rejects them. An unfamiliar status never turns into a pass and does not trigger an image rerender merely because the review format was unreadable.
 
 ## Architecture and validation
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.24.1 — Recover reviewer formatting without losing an image
+
+- Normalizes review status casing, common aliases, partial matches and numeric score strings. Partial matches follow tolerance; they never satisfy must-have checks. Unknown states cannot silently become passes.
+- Saves original reviewer responses alongside an image hash before parsing. Saved-image recovery can reparse a compatible reply without another API call, or request one fresh review without rendering the image again.
+- Broadcasts review failures to the panel so automatic runs visibly leave their running state. The recovery button now queues only the saved-image review on the server and resumes the sequence when requested.
+
 ## 1.24.0 — Automatic Foundry sequences and reference gallery
 
 - Approve once to start a bounded server-side render/review/retry/advance loop. It continues independently of the browser and stops at errors or configured limits; pause/resume and manual override remain available.

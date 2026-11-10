@@ -39,6 +39,8 @@ Restart ComfyUI, refresh the browser, then search **Prompt Mage** or **Archmage*
 
 ## Pick the right tool
 
+**[Foundry (Experimental)](docs/FOUNDRY_EXPERIMENT.md):** a separate production bench for script templates, approved shot lists and one-frame-at-a-time rendering with actual-image review. You accept or retry each frame. [Separate testing workflow](workflows/experimental/01-foundry-single-frame-moss.json); existing Grimoire workflows stay independent.
+
 **[Chat → Apply → Generate](docs/SPELL_SCROLL.md):** Grimoire handles conversation. Click **Use this prompt** on a chosen reply; **Spell Scroll** reads that approved snapshot for image generation. Further chat never silently changes it, and normal workflow runs never call the assistant.
 
 **[Grimoire (Beta)](docs/GRIMOIRE.md)** is a separate persistent conversation node with conversational chat, a live style dropdown, system/task instructions, pinned facts, Appearance Overrides, drag-and-drop file attachments, multiple image inputs, Markdown, message editing, Archmage styles, a warmer default voice and validated MOSS prompt cards. [Grimoire → MOSS sample](workflows/start-here/08-grimoire-to-moss.json).

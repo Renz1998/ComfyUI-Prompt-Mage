@@ -1,0 +1,86 @@
+import json
+from .base import BaseNode
+from ..dart import foundry as store
+from ..dart import foundry_ai as ai
+
+
+def ui(value,result):
+    return {'ui':{'foundry':[store.public(value)]},'result':result}
+
+
+class PromptMageFoundry(BaseNode):
+    CATEGORY='Prompt Mage/Experimental'
+    DESCRIPTION='Experimental manual-gate production panel. Preview and approve a shot list, render one frame, review actual pixels, then accept/retry yourself. Separate server records; never changes Grimoire or Spell Scroll. Use panel buttons, not global Run.'
+    FUNCTION='read';OUTPUT_NODE=False
+    RETURN_TYPES=('STRING','INT','INT','INT','STRING','STRING','STRING','STRING')
+    RETURN_NAMES=('prompt','width','height','seed','run_id','attempt_id','filename_prefix','report')
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{
+            'run_id':('STRING',{'default':'','tooltip':'Managed by the Foundry panel. Persistent run records live on this ComfyUI server.'}),
+            'conversation_id':('STRING',{'default':'','tooltip':'Optional saved Grimoire chat. Its saved provider/model/style settings and recent project context are copied into the run. API keys remain server-side.'}),
+            'template_id':('STRING',{'default':'single'}),
+            'brief':('STRING',{'default':store.BUILTINS['single']['brief'],'multiline':True}),
+            'shared_rules':('STRING',{'default':store.BUILTINS['single']['shared_rules'],'multiline':True}),
+            'review_rules':('STRING',{'default':store.BUILTINS['single']['review_rules'],'multiline':True}),
+            'shot_count':('INT',{'default':1,'min':1,'max':24}),
+            'max_attempts':('INT',{'default':3,'min':1,'max':10}),
+            'max_renders':('INT',{'default':3,'min':1,'max':100}),
+            'max_calls':('INT',{'default':8,'min':1,'max':100}),
+            'attempt_id':('STRING',{'default':'','tooltip':'Managed by Render and review; prevents cached/duplicate attempts.'}),
+        },'optional':{
+            'assistant_profile':(list(store.ASSISTANTS),{'default':store.ASSISTANTS[0],'tooltip':'Use the selected chat’s model or Local Qwen. DeepSeek V4.1 Flash is the recommended API option for planning and image review; API charges apply. V4 Pro does not support vision.'}),
+            'width':('INT',{'forceInput':True,'default':1024}),
+            'height':('INT',{'forceInput':True,'default':1024}),
+            'clip':('CLIP',{'tooltip':'Shared native assistant encoder for Local Qwen. API runs skip this dependency.'}),
+            'appearance':('ATELIER_APPEARANCE',{'tooltip':'Copied into a new plan. Enable selected replacements before previewing; approved runs freeze this recipe.'}),
+        }}
+
+    @classmethod
+    def IS_CHANGED(cls,**kwargs):return float('nan')
+
+    def read(self,run_id='',attempt_id='',width=1024,height=1024,clip=None,**kwargs):
+        prompt,seed=ai.compose(run_id,attempt_id,width,height,clip)
+        with store.LOCK:value=store.read(run_id)
+        prefix='PromptMage-Foundry/'+run_id+'/'+str(value['current']+1).zfill(2)+'-'+attempt_id[:8]
+        return prompt,width,height,seed,run_id,attempt_id,prefix,json.dumps(store.public(value),ensure_ascii=False)
+
+
+class PromptMageFoundryPlan(PromptMageFoundry):
+    OUTPUT_NODE=True;DEPRECATED=True;CATEGORY='Prompt Mage/Internal';FUNCTION='prepare'
+
+    def prepare(self,run_id,conversation_id='',template_id='single',brief='',shared_rules='',review_rules='',shot_count=1,
+                max_attempts=3,max_renders=3,max_calls=8,width=1024,height=1024,clip=None,appearance=None,assistant_profile=store.ASSISTANTS[0],**kwargs):
+        with store.LOCK:value=store.create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance,assistant_profile)
+        value=ai.plan(value,clip)
+        from comfy_execution.graph import ExecutionBlocker
+        return ui(value,tuple(ExecutionBlocker(None) for _ in self.RETURN_TYPES))
+
+
+class PromptMageFoundryReviewSaved(PromptMageFoundry):
+    OUTPUT_NODE=True;DEPRECATED=True;CATEGORY='Prompt Mage/Internal';FUNCTION='review_saved'
+
+    def review_saved(self,run_id,attempt_id,clip=None,**kwargs):
+        value=ai.review(run_id,attempt_id,clip=clip)
+        from comfy_execution.graph import ExecutionBlocker
+        return ui(value,tuple(ExecutionBlocker(None) for _ in self.RETURN_TYPES))
+
+
+class PromptMageFoundryReviewOutput(BaseNode):
+    CATEGORY='Prompt Mage/Experimental';FUNCTION='inspect';OUTPUT_NODE=True
+    DESCRIPTION='Connect the final decoded image and Foundry run_id/attempt_id. Archives one actual image and reviews it using the run’s frozen assistant settings. Always waits for human acceptance; never queues another render.'
+    RETURN_TYPES=('IMAGE','STRING');RETURN_NAMES=('image','review')
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {'required':{'image':('IMAGE',),'run_id':('STRING',{'forceInput':True}),'attempt_id':('STRING',{'forceInput':True})},
+                'optional':{'clip':('CLIP',{'tooltip':'The same native generation-capable encoder used by Foundry for Local Qwen.'})}}
+
+    @classmethod
+    def IS_CHANGED(cls,**kwargs):return float('nan')
+
+    def inspect(self,image,run_id,attempt_id,clip=None):
+        value=ai.review(run_id,attempt_id,image,clip)
+        attempt=store.attempt_for(value,attempt_id)
+        return ui(value,(image,json.dumps(attempt.get('review'),ensure_ascii=False,indent=2)))

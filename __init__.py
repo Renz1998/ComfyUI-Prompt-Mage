@@ -131,3 +131,14 @@ NODE_DISPLAY_NAME_MAPPINGS["DanbooruTagsTransformerSpellScroll"] = "Prompt Mage 
 from .py.nodes.grimoire import PromptMageGrimoireTurn
 NODE_CLASS_MAPPINGS["DanbooruTagsTransformerGrimoireTurn"] = PromptMageGrimoireTurn
 NODE_DISPLAY_NAME_MAPPINGS["DanbooruTagsTransformerGrimoireTurn"] = "Prompt Mage · Grimoire Turn (Internal)"
+
+from .py.nodes.foundry import PromptMageFoundry, PromptMageFoundryPlan, PromptMageFoundryReviewSaved, PromptMageFoundryReviewOutput
+for suffix, cls, label in (
+    ('Foundry',PromptMageFoundry,'Foundry (Experimental)'),
+    ('FoundryPlan',PromptMageFoundryPlan,'Foundry Plan (Internal)'),
+    ('FoundryReviewSaved',PromptMageFoundryReviewSaved,'Foundry Saved Review (Internal)'),
+    ('FoundryReviewOutput',PromptMageFoundryReviewOutput,'Foundry · Review Output (Experimental)')):
+    NODE_CLASS_MAPPINGS['DanbooruTagsTransformer'+suffix]=cls
+    NODE_DISPLAY_NAME_MAPPINGS['DanbooruTagsTransformer'+suffix]='Prompt Mage · '+label
+from .py.dart.foundry_routes import register_foundry_routes
+register_foundry_routes()

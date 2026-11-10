@@ -94,6 +94,7 @@ app.registerExtension({
     beforeRegisterNodeDef(nodeType, nodeData) {
         labels.set(nodeData.name, nodeData.display_name || nodeData.name);
         if (!nodeData.name.startsWith("DanbooruTagsTransformer")) return;
+        if (nodeData.name.startsWith('DanbooruTagsTransformerFoundry')) return;
         const baseCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             baseCreated?.apply(this, arguments);
@@ -362,3 +363,4 @@ app.registerExtension({
     },
 });
 import './grimoire.mjs?v=1.22.1';
+import './foundry.mjs?v=1.23.0';

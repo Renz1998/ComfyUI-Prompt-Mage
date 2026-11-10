@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.23.0 — Foundry experimental production bench
+
+- Adds a separate Foundry panel with script templates, saved run history, editable shot lists, explicit plan approval and bounded attempts/calls.
+- Adds an explicit recommended DeepSeek V4.1 Flash preset and persistent-key panel for planning and vision review. Local Qwen remains the default; text-only DeepSeek Pro is rejected before planning.
+- Reuses a selected Grimoire chat’s saved assistant/model/style settings and recent context without modifying its conversation or Spell Scroll.
+- Compiles native MOSS prompts, archives actual output images and reviews their pixels against approved per-frame checks. Human acceptance is required; retries use a fresh seed and the same prompt.
+- Adds saved-image review recovery, pause/stop controls, persistent run records and a separate single-frame MOSS testing workflow. No unattended loop or automatic prompt rewriting.
+- Includes architecture/testing notes. Provider and queue tests use mocks; live GPU, paid API and RunPod validation remain outstanding.
+
 ## 1.22.1 — Thinking beside Send
 
 - Adds a compact Thinking toggle beside Send, synchronized with the existing Settings control and saved workflow value. Toggling makes no model request; the next reply uses the selected setting.

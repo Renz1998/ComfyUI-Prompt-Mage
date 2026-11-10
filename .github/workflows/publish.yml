@@ -14,7 +14,7 @@ jobs:
           python-version: '3.11'
       - run: python -c "import tomllib; p=tomllib.load(open('pyproject.toml','rb')); assert p['tool']['comfy'].get('PublisherId'), 'Set the real Comfy Registry PublisherId first'"
       - run: pip install torch --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install 'transformers==5.17.0' Pillow
+      - run: pip install 'transformers==5.17.0' Pillow aiohttp
       - run: python -m unittest discover -s tests -p 'test_*.py'
       - uses: actions/setup-node@v4
         with:
@@ -26,6 +26,7 @@ jobs:
       - run: node tests/test_batch_runner.mjs
       - run: node tests/test_archmage_ui.mjs
       - run: node tests/test_openai_key.mjs
+      - run: node tests/test_foundry_ui.mjs
   publish:
     needs: validate
     runs-on: ubuntu-latest

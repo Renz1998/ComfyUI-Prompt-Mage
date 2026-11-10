@@ -32,15 +32,31 @@ If an image meets tolerance, it is accepted and the next frame is queued. Otherw
 
 Inspect any attempt using the attempt picker. **Accept & continue** accepts the selected reviewed attempt immediately and continues the sequence—no “are you sure?” question. This is also how you override an overly strict reviewer. In Manual mode, Accept only advances the record; Render & review next frame starts the next image.
 
+## Physical inspection and collection folders
+
+New reviews separately inspect **anatomy**, **scene geometry**, **garment/material continuity** and **lighting/perspective**. The inspector traces visible body connectivity, support, hand/object contact and occlusion; a pretty face or high prompt score cannot override a major visible defect. Intentional crops, body shapes and foreshortening are not defects by themselves. The panel shows evidence for each category separately from prompt-match details.
+
+| Physical score floor | Anatomy / scene geometry | Clothing / light |
+| --- | --- | --- |
+| Relaxed | 70 | 60 |
+| Balanced | 85 | 80 |
+| Strict | 90 | 85 |
+
+**Physical inspection** has its own Relaxed/Balanced/Strict selector, independent of prompt-match tolerance. A major defect always blocks automatic acceptance. Uncertain categories cannot pass through an inflated score. Object-only scenes may mark anatomy not applicable. These are still fallible vision judgments; inspect the accepted collection before publishing. Old completed reviews are retained and labelled as legacy rather than silently re-scored. Explicit saved-image recovery refreshes an old reply if it lacks the new inspection fields. Detail crops increase API image-token usage but do not add a separate review request.
+
+Choose **IG carousel**, then write what kind of carousel you want; the template does not assume a holiday. Switching templates preserves your custom brief.
+
+The planner proposes a **Project name**, editable before approval. New collections use that readable name under **ComfyUI output/PromptMage-Foundry**, or the optional **Custom folder name**. Duplicate names receive a numeric suffix. All native render tries stay in **attempts**; accepted frames are copied into **accepted**, preferring native PNGs to retain their workflow metadata. **collection.json** lists the accepted frame files. Existing UUID-based folders are kept unchanged. Internal run IDs remain stable.
+
 ## References, templates and persistence
 
 Image roles and the borrowing instructions accompany the planner’s request. Vision APIs receive the planning images directly. Local Qwen describes each image first, which adds one assistant call per reference; the descriptions and planned outfit details persist for later prompt compilation. The planner must turn borrowed details into concrete shot briefs rather than writing only “same as reference.” References do not get re-analysed on every retry.
 
 Gallery uploads use the same server-owned attachment store as Grimoire. Files go to the ComfyUI server; images are subsequently sent to the selected API provider only when you request planning. Key values never enter the workflow. Gallery file IDs and roles are saved with it; they require the same persistent server data to reopen.
 
-Built-in templates include a single scene, holiday carousel, character lookbook, storyboard and product campaign. Save an approved plan as a reusable template from its expandable section. Reusing an unchanged saved plan without new references skips the planning call. Templates do not embed API keys or chat history.
+Built-in templates include a single scene, IG carousel, character lookbook, storyboard and product campaign. Save an approved plan as a reusable template from its expandable section. Reusing an unchanged saved plan without new references skips the planning call. Templates do not embed API keys or chat history.
 
-Runs, reviews and frozen prompts live under **ComfyUI user/prompt_mage/foundry/runs**. Actual PNG attempts live under **foundry/images**; the full reviewed image is retained while only the vision copy is resized to one megapixel. Frozen workflow snapshots live under **foundry/jobs**. Keep this directory and Grimoire’s attachment/credential storage on persistent RunPod storage. These are private plaintext server records; protect server access.
+Runs, reviews and frozen prompts live under **ComfyUI user/prompt_mage/foundry/runs**. Actual PNG attempts live under **foundry/images**; the full reviewed image is retained while the vision API receives a full view (up to 1.5 MP) plus two detail crops (up to 0.9 MP each) in one request; Local Qwen receives only the full view. Frozen workflow snapshots live under **foundry/jobs**. Keep this directory and Grimoire’s attachment/credential storage on persistent RunPod storage. These are private plaintext server records; protect server access.
 
 ## Pause, errors and recovery
 
@@ -73,3 +89,5 @@ Tests cover automatic multi-frame completion without browser callbacks, fresh-se
 A live two-frame smoke test also completed on an RTX 3090 using ComfyUI 0.42.0, MOSS base, custom LoRAs and `res_2s` at 1728 × 2144. DeepSeek Flash borrowed a teal shirt from a supplied image, composed both prompts, reviewed the actual outputs and automatically accepted/advanced through both frames: two renders, five assistant calls. The reviewer's match scores were 92 and 90, with usability 88 for each. These scores are subjective, and one successful sequence is not a quality benchmark. Live rejected-frame retries and RunPod deployment remain unverified; those control paths have automated test coverage. Inspect early results before committing a long sequence.
 
 DeepSeek’s [official model table](https://api-docs.deepseek.com/quick_start/pricing/) and [vision guide](https://api-docs.deepseek.com/guides/vision/) identify `deepseek-flash` as the V4.1 Flash image-capable API option. V4 Pro is text-only; Foundry rejects it for automatic image review. Provider aliases and pricing may change.
+
+A bounded physical-inspection audit used two existing outputs without running diffusion again. The first rubric still accepted ambiguous clothing geometry and over-flagged the control. After calibration, the revised reviewer rejected the ambiguous garment construction and accepted the control. This is a small development check, not a reliability benchmark; model judgments vary and can still miss defects.

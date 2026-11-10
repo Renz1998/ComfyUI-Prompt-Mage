@@ -123,7 +123,7 @@ async def run(server,run_id,poll=0.5):
                     if value.get('job_id')==job_id:value.pop('job_id',None);store.write(value)
             if value['status']=='awaiting_approval':
                 attempt=value['attempts'][-1];criteria=value['plan']['shots'][value['current']]['criteria']
-                decision=assessment(attempt['review'],criteria,value.get('review_tolerance','Balanced'))
+                decision=assessment(attempt['review'],criteria,value.get('review_tolerance','Balanced'),value.get('physical_tolerance','Balanced'))
                 if decision['acceptable']:
                     value=store.action(run_id,'accept',{'attempt_id':attempt['id'],'automatic':True});notify(server,value)
                     if value['status']=='complete':return

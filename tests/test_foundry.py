@@ -12,7 +12,7 @@ from dart_plugin.py.dart import foundry as store, foundry_ai as ai
 
 class FoundryTests(unittest.TestCase):
     def setUp(self):
-        self.temp=tempfile.TemporaryDirectory();self.modules=patch.dict(sys.modules,{'folder_paths':SimpleNamespace(get_user_directory=lambda:self.temp.name)})
+        self.temp=tempfile.TemporaryDirectory();self.modules=patch.dict(sys.modules,{'folder_paths':SimpleNamespace(get_user_directory=lambda:self.temp.name,get_output_directory=lambda:self.temp.name+'/output')})
         self.modules.start();self.id='a'*32
     def tearDown(self):self.modules.stop();self.temp.cleanup()
     def create(self,**changes):
@@ -31,7 +31,7 @@ class FoundryTests(unittest.TestCase):
         return attempt,prompt,generated
     @staticmethod
     def review_json(status='pass'):
-        return json.dumps({'checks':[{'id':'c1','status':status,'score':{'pass':90,'fail':20,'uncertain':50}[status],'evidence':'A map is visible in both hands.'},{'id':'c2','status':'pass','score':90,'evidence':'One traveler is visible.'}],'quality_score':85,'major_defect':False,'summary':'A readable scene.','suggestion':''})
+        return json.dumps({'visual_integrity':{key:dict(applicable=True,status='pass',score=90,severity='none',evidence='Visible structures are coherent.') for key in ('anatomy','spatial','clothing','lighting')},'checks':[{'id':'c1','status':status,'score':{'pass':90,'fail':20,'uncertain':50}[status],'evidence':'A map is visible in both hands.'},{'id':'c2','status':'pass','score':90,'evidence':'One traveler is visible.'}],'quality_score':85,'major_defect':False,'summary':'A readable scene.','suggestion':''})
     def test_manual_gates_and_no_automatic_next_job(self):
         self.plan()
         with self.assertRaisesRegex(ValueError,'Approve'):store.reserve(self.id)

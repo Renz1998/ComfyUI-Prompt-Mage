@@ -13,7 +13,7 @@ from dart_plugin.py.dart.foundry_routes import register_foundry_routes
 class FoundryRouteTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temp=tempfile.TemporaryDirectory();routes=web.RouteTableDef();self.queue=SimpleNamespace(get_current_queue=lambda:([],[]))
-        self.modules=patch.dict(sys.modules,{'server':SimpleNamespace(PromptServer=SimpleNamespace(instance=SimpleNamespace(routes=routes,prompt_queue=self.queue))),'folder_paths':SimpleNamespace(get_user_directory=lambda:self.temp.name)})
+        self.modules=patch.dict(sys.modules,{'server':SimpleNamespace(PromptServer=SimpleNamespace(instance=SimpleNamespace(routes=routes,prompt_queue=self.queue))),'folder_paths':SimpleNamespace(get_user_directory=lambda:self.temp.name,get_output_directory=lambda:self.temp.name+'/output')})
         self.modules.start();register_foundry_routes();app=web.Application();app.add_routes(routes)
         self.client=TestClient(TestServer(app));await self.client.start_server();self.origin=str(self.client.make_url('/')).rstrip('/');self.id='a'*32
     async def asyncTearDown(self):await self.client.close();self.modules.stop();self.temp.cleanup()

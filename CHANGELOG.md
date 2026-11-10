@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.25.0 — Physical inspection and named collections
+
+- Adds separate anatomy, scene geometry, garment/material and lighting inspections before prompt match. Vision APIs receive full context and two crops in one bounded review call. Major physical defects cannot be offset by good prompt scores.
+- Names new output folders from the editable AI project title or a custom name, with collision protection. Separates all attempts from a clean accepted collection and manifest; existing folders remain unchanged.
+- Renames Holiday carousel to IG carousel and preserves custom briefs when switching templates. Adds coherent pose/support instructions to planning and MOSS composition.
+- Brings Foundry and its Inspector into the Ember theme, with a PM forge seal, running glow and separate physical-inspection evidence cards.
+
 ## 1.24.1 — Recover reviewer formatting without losing an image
 
 - Normalizes review status casing, common aliases, partial matches and numeric score strings. Partial matches follow tolerance; they never satisfy must-have checks. Unknown states cannot silently become passes.

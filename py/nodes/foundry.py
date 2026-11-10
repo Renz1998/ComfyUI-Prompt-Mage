@@ -44,6 +44,8 @@ class PromptMageFoundry(BaseNode):
             'reference_instructions':('STRING',{'default':'Borrow only the requested outfit or objects. Keep character identity from Appearance Overrides.','multiline':True}),
             'attachments':('STRING',{'default':'[]'}),
             'reference_roles':('STRING',{'default':'{}'}),
+            'physical_tolerance':(['Relaxed','Balanced','Strict'],{'default':'Balanced','tooltip':'Independent of prompt-match tolerance. Balanced checks physically coherent anatomy, support, garments and integration; Strict rejects smaller ambiguities. Major defects always block.'}),
+            'output_folder':('STRING',{'default':'','tooltip':'Optional collection folder name inside ComfyUI output/PromptMage-Foundry. Empty uses the AI project title. Accepted images are collected in its accepted subfolder.'}),
         }}
 
     @classmethod
@@ -52,7 +54,7 @@ class PromptMageFoundry(BaseNode):
     def read(self,run_id='',attempt_id='',width=1024,height=1024,clip=None,**kwargs):
         prompt,seed=ai.compose(run_id,attempt_id,width,height,clip)
         with store.LOCK:value=store.read(run_id)
-        prefix='PromptMage-Foundry/'+run_id+'/'+str(value['current']+1).zfill(2)+'-'+attempt_id[:8]
+        prefix=store.output_prefix(value,attempt_id)
         return prompt,width,height,seed,run_id,attempt_id,prefix,json.dumps(store.public(value),ensure_ascii=False)
 
 
@@ -60,8 +62,8 @@ class PromptMageFoundryPlan(PromptMageFoundry):
     OUTPUT_NODE=True;DEPRECATED=True;CATEGORY='Prompt Mage/Internal';FUNCTION='prepare'
 
     def prepare(self,run_id,conversation_id='',template_id='single',brief='',shared_rules='',review_rules='',shot_count=1,
-                max_attempts=3,max_renders=3,max_calls=8,width=1024,height=1024,clip=None,appearance=None,assistant_profile=store.ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',run_mode='Automatic',review_tolerance='Balanced',reference_instructions='',attachments='[]',reference_roles='{}',**kwargs):
-        with store.LOCK:value=store.create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance,assistant_profile,style_preset,style_notes,review_tolerance,run_mode)
+                max_attempts=3,max_renders=3,max_calls=8,width=1024,height=1024,clip=None,appearance=None,assistant_profile=store.ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',run_mode='Automatic',review_tolerance='Balanced',reference_instructions='',attachments='[]',reference_roles='{}',output_folder='',physical_tolerance='Balanced',**kwargs):
+        with store.LOCK:value=store.create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance,assistant_profile,style_preset,style_notes,review_tolerance,run_mode,output_folder,physical_tolerance)
         images=[(name,kwargs[name]) for name in ('image',*[f'image_{i}' for i in range(2,7)]) if kwargs.get(name) is not None]
         value=ai.plan(value,clip,images,attachments,reference_instructions,reference_roles)
         from comfy_execution.graph import ExecutionBlocker

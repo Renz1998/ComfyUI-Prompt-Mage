@@ -12,7 +12,7 @@ LOCK = threading.RLock()
 ASSISTANTS=('Local Qwen','DeepSeek V4.1 Flash · Recommended · Text + images','From chat / Local Qwen')
 BUILTINS = {
     'single': dict(name='Single scene test', brief='An adult traveler in a green wool cloak studies a map in a lantern-lit wooden inn.', shared_rules='Keep the chosen character, medium and canvas consistent.', review_rules='Check the requested action, major props and camera logic.', shot_count=1),
-    'carousel': dict(name='Holiday carousel', brief='Plan a holiday photo carousel with varied framing and a clear opening, quieter middle and closing frame.', shared_rules='Keep the chosen palette and light treatment. Allow planned outfit and location changes.', review_rules='Check each shot against its own brief. Allow deliberate close-ups and planned variations.', shot_count=7),
+    'carousel': dict(name='IG carousel', brief='', shared_rules='Keep the chosen character and visual treatment consistent. Allow intentional outfit and location changes.', review_rules='Check the approved scene, physical plausibility and visual cohesion. Allow deliberate crops and useful creative variations.', shot_count=7),
     'lookbook': dict(name='Character lookbook', brief='Create an outfit lookbook with distinct looks and readable clothing details.', shared_rules='Keep the selected character traits; vary clothes and pose intentionally.', review_rules='Check requested clothes and visible character details; allow planned outfit changes.', shot_count=6),
     'storyboard': dict(name='Storyboard', brief='Develop a short visual story with clear actions and a readable sequence.', shared_rules='Track explicitly required character, object and location continuity.', review_rules='Check the action and required continuity for this frame only.', shot_count=6),
     'product': dict(name='Product campaign', brief='Plan a small product campaign with complementary compositions.', shared_rules='Keep product identity, colors and required visible wording accurate.', review_rules='Check the product, required text and requested placement.', shot_count=4),
@@ -108,16 +108,19 @@ def source_settings(conversation_id):
     return config,context
 
 
-def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance=None,assistant_profile=ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',review_tolerance='Balanced',run_mode='Automatic'):
+def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance=None,assistant_profile=ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',review_tolerance='Balanced',run_mode='Automatic',output_folder='',physical_tolerance='Balanced'):
     from .moss import canvas_size
     checked_id(run_id);canvas_size(width,height)
     if any(isinstance(n,bool) or not isinstance(n,int) for n in (shot_count,max_attempts,max_renders,max_calls)):
         raise ValueError('Run limits must be whole numbers.')
     if not 1<=shot_count<=24 or not 1<=max_attempts<=10 or not 1<=max_renders<=100 or not 1<=max_calls<=100:raise ValueError('Run limits are out of range.')
     if max_renders<shot_count or max_calls<1+2*shot_count:raise ValueError('Budgets must allow at least one render and two assistant calls per frame, plus planning. Use the suggested budgets.')
+    if physical_tolerance not in ('Relaxed','Balanced','Strict'):raise ValueError('Choose a valid physical inspection strictness.')
     if review_tolerance not in ('Relaxed','Balanced','Strict') or run_mode not in ('Automatic','Manual'):raise ValueError('Choose a valid review tolerance and run mode.')
     if run_path(run_id).exists():raise ValueError('Run already exists. New plans use a new run ID.')
     selected=template(template_id);config,context=source_settings(conversation_id)
+    if not isinstance(output_folder,str) or len(output_folder)>100:raise ValueError('Use a short collection folder name, or leave it empty for the AI project title.')
+    if output_folder.strip():folder_label(output_folder,custom=True)
     if assistant_profile not in ASSISTANTS:raise ValueError('Choose a supported Foundry assistant preset.')
     if assistant_profile=='Local Qwen':config.update(assistant_backend='Local Qwen',local_model='Automatic')
     if assistant_profile==ASSISTANTS[1]:
@@ -134,7 +137,7 @@ def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,sh
         template=template_id,assistant_profile=assistant_profile,brief=text(brief or selected['brief'],'Brief'),shared_rules=shared_rules[:8000],review_rules=review_rules[:8000],
         shot_count=shot_count,width=width,height=height,appearance=copy.deepcopy(appearance),
         limits=dict(attempts=max_attempts,renders=max_renders,calls=max_calls),usage=dict(renders=0,calls=0),
-        run_mode=run_mode,review_tolerance=review_tolerance,automation_enabled=False,
+        run_mode=run_mode,review_tolerance=review_tolerance,automation_enabled=False,output_folder=output_folder.strip(),visual_quality_gate=True,physical_tolerance=physical_tolerance,
         plan=None,current=0,attempts=[],compiled={},accepted=[],last_error='')
     receipt=root()/'jobs'/(run_id+'.json')
     if receipt.exists():
@@ -188,11 +191,18 @@ def action(run_id,operation,data=None):
         value=read(run_id)
         if operation=='approve':
             if value['status']!='plan_ready':raise ValueError('Preview a plan before approving it.')
-            value['plan']=validate_plan(data.get('plan',value['plan']),value['shot_count']);value.update(approved=True,status='ready')
+            value['plan']=validate_plan(data.get('plan',value['plan']),value['shot_count'])
+            if 'output_folder' in data:
+                folder=data['output_folder']
+                if not isinstance(folder,str) or len(folder)>100:raise ValueError('Folder name must be text under 100 characters.')
+                if folder.strip():folder_label(folder,custom=True)
+                value['output_folder']=folder.strip()
+            claim_output_folder(value);value.update(approved=True,status='ready')
         elif operation=='accept':
             if value['status'] not in ('awaiting_approval','needs_attention'):raise ValueError('Review a generated image before accepting it.')
             attempt=attempt_for(value,data.get('attempt_id',''))
             if attempt['shot_id']!=value['plan']['shots'][value['current']]['id'] or not attempt.get('review'):raise ValueError('Choose a reviewed attempt for the current frame.')
+            export_accepted(value,attempt)
             value['accepted'].append(dict(shot_id=attempt['shot_id'],attempt_id=attempt['id'],automatic=bool(data.get('automatic',False))));attempt['status']='accepted';value['current']+=1
             value['last_error']=''
             value.pop('last_decision',None)
@@ -224,3 +234,73 @@ def public(value):
     result={key:copy.deepcopy(v) for key,v in value.items() if key not in ('context','appearance','compiled','reference_context')}
     result['assistant']=value['config'].get('assistant_backend','Local Qwen')
     return result
+
+
+def folder_label(value,custom=False,limit=80):
+    import unicodedata
+    if not isinstance(value,str):raise ValueError('Folder name must be text.')
+    if custom and (any(c in value for c in '/\\<>:"|?*') or value.strip() in ('.','..')):raise ValueError('Use a folder name, not a path. Avoid / \\ < > : " | ? * .')
+    value=unicodedata.normalize('NFKC',value)
+    label=''.join(c if c.isalnum() or c in ' _-' else '-' for c in value if not unicodedata.category(c).startswith('C'))
+    label=re.sub(r'[-\s_]+','-',label).strip('-').lower()[:limit].rstrip('-')
+    if not label:label='foundry-project'
+    if re.fullmatch(r'(con|prn|aux|nul|com[1-9]|lpt[1-9])',label,re.I):label='project-'+label
+    return label
+
+
+def output_root():
+    import folder_paths
+    return Path(folder_paths.get_output_directory())/'PromptMage-Foundry'
+
+
+def claim_output_folder(value):
+    if value.get('output_dir_name'):return
+    base=output_root();base.mkdir(parents=True,exist_ok=True)
+    label=folder_label(value.get('output_folder') or value['plan']['title'],custom=bool(value.get('output_folder')))
+    for number in range(1,1001):
+        name=label if number==1 else label+'-'+str(number)
+        path=base/name
+        try:path.mkdir()
+        except FileExistsError:continue
+        (path/'.prompt-mage-run.json').write_text(json.dumps({'run_id':value['id'],'title':value['plan']['title']}),encoding='utf-8')
+        value['output_dir_name']=name;return
+    raise ValueError('Too many collections share this name. Choose another collection folder name.')
+
+
+def collection_path(value):
+    name=value.get('output_dir_name')
+    if not name:return None
+    if name!=folder_label(name):raise ValueError('Invalid collection folder name.')
+    base=output_root().resolve();path=(base/name).resolve()
+    if path.parent!=base:raise ValueError('Collection folder must stay in the ComfyUI output directory.')
+    owner=json.loads((path/'.prompt-mage-run.json').read_text(encoding='utf-8'))
+    if owner.get('run_id')!=value['id']:raise ValueError('This collection belongs to another run.')
+    return path
+
+
+def output_prefix(value,attempt_id):
+    attempt=attempt_for(value,attempt_id)
+    if not value.get('output_dir_name'):return 'PromptMage-Foundry/'+value['id']+'/'+str(value['current']+1).zfill(2)+'-'+attempt_id[:8]
+    collection_path(value)
+    shot=next(s for s in value['plan']['shots'] if s['id']==attempt['shot_id']);index=value['plan']['shots'].index(shot)+1
+    number=[a['id'] for a in value['attempts'] if a['shot_id']==shot['id']].index(attempt_id)+1
+    return 'PromptMage-Foundry/'+value['output_dir_name']+'/attempts/'+str(index).zfill(2)+'-'+folder_label(shot['title'],limit=50)+'-try-'+str(number).zfill(2)
+
+
+def export_accepted(value,attempt):
+    import shutil
+    path=collection_path(value)
+    if path is None:return  # Existing runs keep their original folders and filenames.
+    target=path/'accepted';target.mkdir(exist_ok=True)
+    if target.resolve().parent!=path:raise ValueError('Accepted images must stay inside their collection.')
+    shot=next(s for s in value['plan']['shots'] if s['id']==attempt['shot_id']);index=value['plan']['shots'].index(shot)+1
+    name=str(index).zfill(2)+'-'+folder_label(shot['title'],limit=50)+'.png'
+    # Prefer the native SaveImage PNG, preserving its embedded workflow metadata.
+    prefix=Path(output_prefix(value,attempt['id']));stem=path/'attempts'/prefix.name
+    candidates=sorted(stem.parent.glob(stem.name+'_*.png'),key=lambda p:p.stat().st_mtime)
+    source=candidates[-1] if candidates else root()/'images'/value['id']/(attempt['id']+'.png')
+    temp=target/(name+'.tmp');shutil.copy2(source,temp);temp.replace(target/name)
+    attempt['accepted_file']='accepted/'+name
+    entries=[dict(frame=i+1,title=s['title'],file=a['accepted_file']) for i,s in enumerate(value['plan']['shots']) for a in value['attempts'] if a.get('accepted_file') and a['shot_id']==s['id']]
+    manifest=dict(title=value['plan']['title'],run_id=value['id'],images=entries)
+    temp=path/'collection.tmp';temp.write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8');temp.replace(path/'collection.json')

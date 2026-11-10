@@ -48,7 +48,7 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.temp=tempfile.TemporaryDirectory();self.id='a'*32;self.submitted=[];self.active=[];self.history={};self.score_sequence=[85,85];self.gate=None;self.cancel_job=False
         async def validate_prompt(prompt_id,prompt,partial_execution_list=None):return True,None,partial_execution_list,{}
-        self.modules=patch.dict(sys.modules,{'folder_paths':SimpleNamespace(get_user_directory=lambda:self.temp.name),'execution':SimpleNamespace(validate_prompt=validate_prompt,SENSITIVE_EXTRA_DATA_KEYS=[])})
+        self.modules=patch.dict(sys.modules,{'folder_paths':SimpleNamespace(get_user_directory=lambda:self.temp.name,get_output_directory=lambda:self.temp.name+'/output'),'execution':SimpleNamespace(validate_prompt=validate_prompt,SENSITIVE_EXTRA_DATA_KEYS=[])})
         self.modules.start()
         def put(entry):
             self.assertFalse(self.active,'The next frame must wait until the previous native job completes')
@@ -70,6 +70,7 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
             with store.LOCK:
                 value=store.read(run_id);attempt=store.attempt_for(value,attempt_id)
                 attempt['image']=True
+                path=store.root()/'images'/run_id/(attempt_id+'.png');path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'PNG fixture')
                 if value['status'] not in ('paused','stopped'):
                     attempt['review']=review(self.score_sequence.pop(0) if self.score_sequence else 85);attempt['status']='reviewed';value['status']='awaiting_approval'
                 store.write(value)

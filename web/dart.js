@@ -4,7 +4,7 @@ import { api } from "../../scripts/api.js";
 import { convertToInput } from "../../extensions/core/widgetInputs.js";
 import { addTextPreviewWidgets, updateTextPreviewWidgets } from "../../extensions/core/textPreviewWidgets.js";
 import { connectionsFor, resolveSlot } from "./connections.mjs?v=1.22.1";
-import { installDesign, configureDesign, toggleDesign, toggleTheme, setDesignState, updateDesignBackend } from "./design.mjs?v=1.22.1";
+import { installDesign, configureDesign, toggleDesign, toggleTheme, setDesignState, updateDesignBackend } from "./design.mjs?v=1.25.0";
 import { installStatusWidget, updateStatusWidget, finishedState, combineReports } from "./status.mjs";
 import { installUploadWidget, refreshUploadWidget } from "./upload.mjs?v=1.15.1";
 import { arrangeArchmage, updateArchmageControls, bindWorkflowEncoders } from "./archmage_ui.mjs?v=1.15.1";
@@ -94,7 +94,7 @@ app.registerExtension({
     beforeRegisterNodeDef(nodeType, nodeData) {
         labels.set(nodeData.name, nodeData.display_name || nodeData.name);
         if (!nodeData.name.startsWith("DanbooruTagsTransformer")) return;
-        if (nodeData.name.startsWith('DanbooruTagsTransformerFoundry')) return;
+        if (nodeData.name.startsWith('DanbooruTagsTransformerFoundry') && !nodeData.name.endsWith('ReviewOutput')) return;
         const baseCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
             baseCreated?.apply(this, arguments);
@@ -363,4 +363,4 @@ app.registerExtension({
     },
 });
 import './grimoire.mjs?v=1.22.1';
-import './foundry.mjs?v=1.24.1';
+import './foundry.mjs?v=1.25.0';

@@ -52,6 +52,24 @@ class PromptMageFoundry(BaseNode):
     def IS_CHANGED(cls,**kwargs):return float('nan')
 
     def read(self,run_id='',attempt_id='',width=1024,height=1024,clip=None,**kwargs):
+        # A normal ComfyUI Run must not create a paid request or reuse a stale attempt.
+        # The panel reserves explicit attempts; idle workflow execution stops downstream.
+        notice='Start Foundry with Preview plan, then Approve & start sequence. ComfyUI Run does not create a plan.'
+        with store.LOCK:
+            if run_id and attempt_id:
+                try:
+                    value=store.read(run_id)
+                    attempt=store.attempt_for(value,attempt_id)
+                except ValueError:
+                    notice='This workflow references a run or attempt unavailable on this server. Open a saved run or choose New plan, then Preview plan.'
+                else:
+                    if value['status']=='rendering' and attempt['status']=='reserved':notice=None
+                    else:notice='No fresh render attempt is reserved. Use the Foundry panel to approve, resume or render the next frame; ComfyUI Run does not start another attempt.'
+            elif run_id:
+                notice='Use the Foundry panel to approve the previewed plan or open a saved run. ComfyUI Run does not reserve a render attempt.'
+        if notice:
+            from comfy_execution.graph import ExecutionBlocker
+            return {'ui':{'foundry_notice':[notice]},'result':tuple(ExecutionBlocker(None) for _ in self.RETURN_TYPES)}
         prompt,seed=ai.compose(run_id,attempt_id,width,height,clip)
         with store.LOCK:value=store.read(run_id)
         prefix=store.output_prefix(value,attempt_id)

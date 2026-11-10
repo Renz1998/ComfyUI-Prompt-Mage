@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.25.1 — Safe idle execution
+
+- Normal ComfyUI Run with no Foundry plan, unavailable run or stale attempt now blocks downstream execution cleanly and shows guidance in the panel. It does not create a plan, render attempt or assistant request.
+- Moves Preview plan into the persistent header so starting a sequence is easy to find.
+
 ## 1.25.0 — Physical inspection and named collections
 
 - Adds separate anatomy, scene geometry, garment/material and lighting inspections before prompt match. Vision APIs receive full context and two crops in one bounded review call. Major physical defects cannot be offset by good prompt scores.

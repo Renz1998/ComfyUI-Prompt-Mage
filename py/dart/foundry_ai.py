@@ -17,6 +17,9 @@ def encoder_for(config,clip=None):
     backend=config.get('assistant_backend','Local Qwen')
     if backend=='OpenAI API':return OpenAIEncoder(config.get('openai_model',DEFAULT_MODEL))
     if backend=='DeepSeek API':return DeepSeekEncoder(config.get('deepseek_model',DS_DEFAULT))
+    if backend=='Gemini API':
+        from .gemini_assistant import GeminiEncoder,DEFAULT_MODEL as GEMINI_DEFAULT
+        return GeminiEncoder(config.get('gemini_model',GEMINI_DEFAULT))
     if backend=='Local Qwen':return load_local_clip(config.get('local_model','Automatic'),clip,auto_download=True)
     raise ValueError('Unsupported source assistant provider.')
 
@@ -284,7 +287,7 @@ Keep aesthetic judgments grounded in visible composition/light/materials. The ho
             except (ValueError,TypeError) as error:
                 raise ValueError('Image saved, but the reviewer response could not be read: '+str(error)+' Use Review saved image; no new render is needed.') from None
         from .foundry_review import assessment
-        result.update(assessment(result,shot['criteria'],value.get('review_tolerance','Balanced'),value.get('physical_tolerance','Balanced')))
+        result.update(assessment(result,shot['criteria'],value.get('review_tolerance','Balanced'),value.get('physical_tolerance','Balanced'),value.get('passing_score')))
         with store.LOCK:
             current=store.read(run_id);attempt=store.attempt_for(current,attempt_id);attempt.update(status='reviewed',review=result,error='')
             if current['status'] not in ('stopped','paused'):current['status']='awaiting_approval'

@@ -85,10 +85,21 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
         value=store.read(self.id);self.assertEqual(value['status'],'complete');self.assertEqual(len(self.submitted),3)
         self.assertEqual([a['shot_id'] for a in value['attempts']],['shot-1','shot-1','shot-2']);self.assertEqual(len({a['seed'] for a in value['attempts']}),3)
     async def test_attempt_limit_pauses_instead_of_looping_or_silently_accepting(self):
-        self.ready(count=1,tries=2);self.score_sequence=[20,20];await runner.run(self.server,self.id,poll=0.001)
+        self.ready(count=1,tries=2);v=store.read(self.id);v['failure_policy']='Pause for review';store.write(v);self.score_sequence=[20,20];await runner.run(self.server,self.id,poll=0.001)
         value=store.read(self.id);self.assertEqual(value['status'],'needs_attention');self.assertEqual(len(self.submitted),2);self.assertEqual(value['accepted'],[])
         self.assertIn('retry limit',value['last_error'])
         value=store.action(self.id,'accept',{'attempt_id':value['attempts'][0]['id']});self.assertEqual(value['status'],'complete')
+    async def test_first_pass_advances_without_using_remaining_tries(self):
+        self.ready(count=3,tries=3);self.score_sequence=[85,85,85]
+        await runner.run(self.server,self.id,poll=0.001)
+        v=store.read(self.id);self.assertEqual(v['status'],'complete');self.assertEqual(len(self.submitted),3)
+        self.assertEqual([a['shot_id'] for a in v['attempts']],['shot-1','shot-2','shot-3'])
+    async def test_automatic_exhaustion_flags_frame_and_finishes_rest(self):
+        self.ready(count=2,tries=2);self.score_sequence=[20,20,90]
+        await runner.run(self.server,self.id,poll=0.001)
+        v=store.read(self.id);self.assertEqual(v['status'],'complete');self.assertEqual(len(self.submitted),3)
+        self.assertEqual(len(v['skipped']),1);self.assertEqual(len(v['accepted']),1)
+        self.assertEqual(v['accepted'][0]['shot_id'],'shot-2')
     async def test_pause_and_stop_prevent_next_submission(self):
         for operation in ('pause','stop'):
             if operation=='stop':self.id='b'*32
@@ -128,6 +139,11 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
         await runner.retry_saved_review(self.server,self.id,continue_run=False);await asyncio.sleep(0.001)
         value=store.read(self.id);self.assertEqual(value['status'],'awaiting_approval');self.assertFalse(value['automation_enabled']);self.assertEqual(value['usage']['renders'],1)
         self.assertEqual(self.submitted[0][4],['1']);self.assertEqual(self.submitted[0][2]['1']['class_type'],runner.FOUNDRY+'ReviewSaved')
+    def test_second_plan_is_blocked_for_same_running_workflow(self):
+        self.ready();recipe=runner.load_recipe(self.id);recipe['workflow']={'id':'same-workflow'}
+        with patch.dict(runner.TASKS,{self.id:SimpleNamespace(done=lambda:False)}),patch.object(runner,'load_recipe',return_value=recipe):
+            with self.assertRaisesRegex(ValueError,'already processing'):runner.assert_can_plan({'id':'same-workflow'},'1')
+            runner.assert_can_plan({'id':'different-workflow'},'1')
     def test_recipe_rejects_unrelated_images_and_seedless_workflows(self):
         for change in ('prompt','seed','batch'):
             graph=workflow()

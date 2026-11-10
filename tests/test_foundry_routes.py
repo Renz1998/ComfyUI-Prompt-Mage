@@ -54,3 +54,14 @@ class FoundryRouteTests(unittest.IsolatedAsyncioTestCase):
         value=self.create();value.update(status='plan_ready',run_mode='Manual',plan=store.validate_plan({'title':'Inn','shots':[{'title':'Map','brief':'Traveler with map','criteria':['Map visible']}]},1));store.write(value)
         with patch.object(runner,'start') as start:response=await self.call('approve_start',job=workflow(),node_id='1')
         self.assertEqual(response.status,200);start.assert_not_called()
+
+    async def test_policy_update_reuses_saved_review_without_ai_request(self):
+        from test_foundry_runner import workflow,review
+        from dart_plugin.py.dart import foundry_runner as runner
+        from dart_plugin.py.dart import foundry_ai as ai
+        self.create();v=store.read(self.id);v.update(status='plan_ready',plan=store.validate_plan({'title':'Test','shots':[{'title':'Map','brief':'Map scene','criteria':['Map visible']}]},1));store.write(v);store.action(self.id,'approve');a=store.reserve(self.id)
+        v=store.read(self.id);v['status']='needs_attention';v['attempts'][0]['review']=review(90);store.write(v);runner.save_recipe(self.id,workflow(),'1')
+        with patch.object(ai,'generate') as gen,patch.object(runner,'start'):
+            response=await self.call('update_review_policy',passing_score=80)
+        self.assertEqual(response.status,200);gen.assert_not_called();value=(await response.json())['run']
+        self.assertEqual(value['usage']['renders'],1);self.assertEqual(value['status'],'awaiting_approval');self.assertTrue(value['attempts'][0]['review']['acceptable'])

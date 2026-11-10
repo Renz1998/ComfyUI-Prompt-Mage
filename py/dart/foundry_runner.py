@@ -123,11 +123,15 @@ async def run(server,run_id,poll=0.5):
                     if value.get('job_id')==job_id:value.pop('job_id',None);store.write(value)
             if value['status']=='awaiting_approval':
                 attempt=value['attempts'][-1];criteria=value['plan']['shots'][value['current']]['criteria']
-                decision=assessment(attempt['review'],criteria,value.get('review_tolerance','Balanced'),value.get('physical_tolerance','Balanced'))
+                decision=assessment(attempt['review'],criteria,value.get('review_tolerance','Balanced'),value.get('physical_tolerance','Balanced'),value.get('passing_score'))
                 if decision['acceptable']:
                     value=store.action(run_id,'accept',{'attempt_id':attempt['id'],'automatic':True});notify(server,value)
                     if value['status']=='complete':return
                 elif sum(a['shot_id']==attempt['shot_id'] for a in value['attempts'])>=value['limits']['attempts']:
+                    if value.get('failure_policy')=='Skip frame and continue':
+                        value=store.skip_frame(run_id,decision['decision_reason']);notify(server,value)
+                        if value['status']=='complete':return
+                        continue
                     raise ValueError('This frame reached its retry limit. '+decision['decision_reason']+' Accept a usable attempt to continue, or stop the run.')
                 else:
                     with store.LOCK:
@@ -148,6 +152,16 @@ async def run(server,run_id,poll=0.5):
     except asyncio.CancelledError:raise
     except Exception as error:
         store.fail(run_id,str(error));notify(server,store.read(run_id))
+
+
+def assert_can_plan(workflow,node_id):
+    """A second preview of the same workflow/node cannot overlap its active controller."""
+    if not isinstance(workflow,dict) or not workflow.get('id') or node_id is None:return
+    for run_id,task in list(TASKS.items()):
+        if task.done():continue
+        recipe=load_recipe(run_id)
+        if str(recipe['node_id'])==str(node_id) and recipe.get('workflow',{}).get('id')==workflow['id']:
+            raise ValueError('This Foundry sequence is already processing. Pause or stop it before previewing a new plan.')
 
 
 def start(server,run_id):

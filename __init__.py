@@ -142,3 +142,6 @@ for suffix, cls, label in (
     NODE_DISPLAY_NAME_MAPPINGS['DanbooruTagsTransformer'+suffix]='Prompt Mage · '+label
 from .py.dart.foundry_routes import register_foundry_routes
 register_foundry_routes()
+
+from .py.dart.gemini_routes import register_gemini_routes
+register_gemini_routes()

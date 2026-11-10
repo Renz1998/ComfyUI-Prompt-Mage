@@ -64,6 +64,22 @@ def register_foundry_routes():
                 value['automation_enabled']=value.get('run_mode','Automatic')=='Automatic'
                 value.pop('job_id',None);store.write(value)
                 return dict(run=store.public(value))
+            if operation=='update_review_policy':
+                from . import foundry_runner as runner
+                from .foundry_review import assessment
+                if runner.job_active(PromptServer.instance,value.get('job_id')) or value['status'] in ('planning','rendering','reviewing'):raise ValueError('Wait until Foundry is idle before changing its review policy.')
+                score=data.get('passing_score',80);physical=data.get('physical_tolerance','Balanced');policy=data.get('failure_policy','Skip frame and continue')
+                if isinstance(score,bool) or not isinstance(score,int) or not 50<=score<=100:raise ValueError('Passing score must be 50–100.')
+                if physical not in ('Relaxed','Balanced','Strict') or policy not in ('Skip frame and continue','Pause for review'):raise ValueError('Invalid review policy.')
+                if not value.get('approved') or value['status'] in ('complete','stopped'):raise ValueError('Choose an unfinished approved run.')
+                runner.load_recipe(identifier)
+                value.update(passing_score=score,physical_tolerance=physical,failure_policy=policy,last_error='')
+                latest=value['attempts'][-1] if value['attempts'] else None
+                if latest and latest.get('review') and latest['shot_id']==value['plan']['shots'][value['current']]['id']:
+                    latest['review'].update(assessment(latest['review'],value['plan']['shots'][value['current']]['criteria'],value.get('review_tolerance','Balanced'),physical,score));value['status']='awaiting_approval'
+                elif value['status'] in ('paused','needs_attention'):raise ValueError('Recover the unfinished image review before updating and continuing.')
+                value['automation_enabled']=value.get('run_mode')=='Automatic';value.pop('job_id',None);store.write(value)
+                return dict(run=store.public(value))
             if operation=='preview':
                 from .foundry_ai import preview
                 attempt=store.attempt_for(value,data['attempt_id'])
@@ -120,7 +136,7 @@ def register_foundry_routes():
                 result=dict(run=await retry_saved_review(PromptServer.instance,data['id'],data.get('client_id',''),data.get('continue_run',True)))
             else:result=await asyncio.to_thread(process,data)
             value=result.get('run')
-            if value and value.get('automation_enabled') and data.get('operation') in ('approve_start','accept_continue','continue_auto','retry_auto','bind_job','resume') and value['status'] not in ('paused','stopped','complete','needs_attention'):
+            if value and value.get('automation_enabled') and data.get('operation') in ('approve_start','accept_continue','continue_auto','retry_auto','bind_job','resume','update_review_policy') and value['status'] not in ('paused','stopped','complete','needs_attention'):
                 from .foundry_runner import start
                 start(PromptServer.instance,value['id'])
                 value['controller_running']=True

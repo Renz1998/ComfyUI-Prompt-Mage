@@ -10,6 +10,9 @@ from pathlib import Path
 
 LOCK = threading.RLock()
 ASSISTANTS=('Local Qwen','DeepSeek V4.1 Flash · Recommended · Text + images','From chat / Local Qwen')
+from .openai_assistant import MODELS as OPENAI_MODELS
+from .gemini_assistant import MODELS as GEMINI_MODELS
+ASSISTANTS=ASSISTANTS+tuple('OpenAI · '+name for name in OPENAI_MODELS)+tuple('Gemini · '+name for name in GEMINI_MODELS)
 BUILTINS = {
     'single': dict(name='Single scene test', brief='An adult traveler in a green wool cloak studies a map in a lantern-lit wooden inn.', shared_rules='Keep the chosen character, medium and canvas consistent.', review_rules='Check the requested action, major props and camera logic.', shot_count=1),
     'carousel': dict(name='IG carousel', brief='', shared_rules='Keep the chosen character and visual treatment consistent. Allow intentional outfit and location changes.', review_rules='Check the approved scene, physical plausibility and visual cohesion. Allow deliberate crops and useful creative variations.', shot_count=7),
@@ -108,9 +111,11 @@ def source_settings(conversation_id):
     return config,context
 
 
-def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance=None,assistant_profile=ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',review_tolerance='Balanced',run_mode='Automatic',output_folder='',physical_tolerance='Balanced'):
+def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance=None,assistant_profile=ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',review_tolerance='Balanced',run_mode='Automatic',output_folder='',physical_tolerance='Balanced',passing_score=80,failure_policy='Skip frame and continue'):
     from .moss import canvas_size
     checked_id(run_id);canvas_size(width,height)
+    if isinstance(passing_score,bool) or not isinstance(passing_score,int) or not 50<=passing_score<=100:raise ValueError('Passing score must be 50–100.')
+    if failure_policy not in ('Skip frame and continue','Pause for review'):raise ValueError('Choose a valid retry-limit action.')
     if any(isinstance(n,bool) or not isinstance(n,int) for n in (shot_count,max_attempts,max_renders,max_calls)):
         raise ValueError('Run limits must be whole numbers.')
     if not 1<=shot_count<=24 or not 1<=max_attempts<=10 or not 1<=max_renders<=100 or not 1<=max_calls<=100:raise ValueError('Run limits are out of range.')
@@ -126,6 +131,8 @@ def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,sh
     if assistant_profile==ASSISTANTS[1]:
         from .deepseek_assistant import DEFAULT_MODEL
         config.update(assistant_backend='DeepSeek API',deepseek_model=DEFAULT_MODEL)
+    if assistant_profile.startswith('OpenAI · '):config.update(assistant_backend='OpenAI API',openai_model=assistant_profile.removeprefix('OpenAI · '))
+    if assistant_profile.startswith('Gemini · '):config.update(assistant_backend='Gemini API',gemini_model=assistant_profile.removeprefix('Gemini · '))
     from .style_presets import resolve_style
     resolved,_=resolve_style(style_preset,style_notes,secrets.randbelow(2**32))
     config.update(style_preset=resolved,style_notes=style_notes)
@@ -137,7 +144,7 @@ def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,sh
         template=template_id,assistant_profile=assistant_profile,brief=text(brief or selected['brief'],'Brief'),shared_rules=shared_rules[:8000],review_rules=review_rules[:8000],
         shot_count=shot_count,width=width,height=height,appearance=copy.deepcopy(appearance),
         limits=dict(attempts=max_attempts,renders=max_renders,calls=max_calls),usage=dict(renders=0,calls=0),
-        run_mode=run_mode,review_tolerance=review_tolerance,automation_enabled=False,output_folder=output_folder.strip(),visual_quality_gate=True,physical_tolerance=physical_tolerance,
+        run_mode=run_mode,review_tolerance=review_tolerance,automation_enabled=False,output_folder=output_folder.strip(),visual_quality_gate=True,physical_tolerance=physical_tolerance,passing_score=passing_score,failure_policy=failure_policy,skipped=[],
         plan=None,current=0,attempts=[],compiled={},accepted=[],last_error='')
     receipt=root()/'jobs'/(run_id+'.json')
     if receipt.exists():
@@ -207,6 +214,7 @@ def action(run_id,operation,data=None):
             value['last_error']=''
             value.pop('last_decision',None)
             value['status']='complete' if value['current']==len(value['plan']['shots']) else 'ready'
+            write_collection_manifest(value)
         elif operation=='pause':
             if value['status'] in ('complete','stopped','paused'):raise ValueError('This run has ended or is already paused.')
             value['paused_from']=value['status'];value['status']='paused'
@@ -301,6 +309,26 @@ def export_accepted(value,attempt):
     source=candidates[-1] if candidates else root()/'images'/value['id']/(attempt['id']+'.png')
     temp=target/(name+'.tmp');shutil.copy2(source,temp);temp.replace(target/name)
     attempt['accepted_file']='accepted/'+name
+    write_collection_manifest(value)
+
+
+def write_collection_manifest(value):
+    path=collection_path(value)
+    if path is None:return
     entries=[dict(frame=i+1,title=s['title'],file=a['accepted_file']) for i,s in enumerate(value['plan']['shots']) for a in value['attempts'] if a.get('accepted_file') and a['shot_id']==s['id']]
-    manifest=dict(title=value['plan']['title'],run_id=value['id'],images=entries)
+    manifest=dict(title=value['plan']['title'],run_id=value['id'],status=value['status'],planned_frames=value['shot_count'],accepted_count=len(entries),images=entries,missing_frames=value.get('skipped',[]))
     temp=path/'collection.tmp';temp.write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8');temp.replace(path/'collection.json')
+
+
+
+def skip_frame(run_id,reason):
+    """Automatic mode records an unresolved frame honestly and moves on, never exports it."""
+    with LOCK:
+        value=read(run_id)
+        if value['status']!='awaiting_approval':raise ValueError('Only a reviewed frame can be skipped.')
+        shot=value['plan']['shots'][value['current']]
+        value.setdefault('skipped',[]).append(dict(shot_id=shot['id'],title=shot['title'],reason=str(reason)[:1600]))
+        value['current']+=1;value['last_decision']='Frame skipped after retry limit: '+shot['title'];value['last_error']=''
+        value['status']='complete' if value['current']==len(value['plan']['shots']) else 'ready'
+        if value['status']=='complete':value['last_decision']=f"Sequence finished: {len(value['accepted'])}/{value['shot_count']} accepted; {len(value['skipped'])} skipped frames need replacements."
+        write_collection_manifest(value);write(value);return value

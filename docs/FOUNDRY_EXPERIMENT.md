@@ -7,7 +7,7 @@
 ## Start a sequence
 
 1. Open the separate testing workflow. Select your installed MOSS filenames. The supplied accelerator LoRA and sampling settings come from the main workflow; there is no character LoRA. Leave latent batch size at one.
-2. Choose **Style / theme** and **Assistant model** explicitly. The full Archmage photo/anime/illustration presets and custom notes are available. Local Qwen uses the connected native encoder. DeepSeek V4.1 Flash is the recommended API option; selecting it opens the existing persistent-key panel. Selecting options makes no AI request.
+2. Choose **Style / theme** and **Assistant model** explicitly. The full Archmage photo/anime/illustration presets and custom notes are available. Local Qwen uses the connected native encoder. Select Local Qwen, DeepSeek Flash, OpenAI Terra/Sol or Gemini. Selecting an API model opens its own persistent-key panel. Selecting options makes no AI request.
 3. Choose a script template and write the brief. Set **Frames** and **Tries per frame**. Foundry suggests total render/call limits for that count; inspect or change them under **Advanced · spending limits**. Seven frames no longer inherit a three-render cap. A new plan must allow at least one render and two assistant calls per frame, plus planning.
 4. Add optional **Planning images**. Drop images into the gallery, upload files, or choose a local folder—even on RunPod. Numbered thumbnails preserve your order; use the arrows to reorder, × to remove, and Clear to empty the gallery. Select a role under each image: outfit, pose, props, setting, visual style or character. **What should we borrow?** gives additional instructions, such as “Image 1: use only the outfit; keep my character.” Up to twelve images are supported across the gallery and optional single image socket. There are no growing rows of image sockets.
 5. **Optional · borrow context from a Grimoire chat** supplies recent script ideas. This is not the assistant/model selector and does not replace your selected style. Leave it empty if unnecessary. Appearance Overrides controls your selected character traits and takes priority over borrowed identity details.
@@ -16,37 +16,33 @@
 
 **Automatic** is the default. **Manual** remains available under After plan approval; it stops after each review. Manual acceptance has no confirmation dialog, and the next button reads **Render & review next frame**. Normal global Run does not reserve a new attempt; use Foundry’s panel.
 
-## Review tolerance
+## Passing score and automatic progression
 
-The reviewer inspects the actual decoded image. It scores each approved check and the image’s visible usability, with evidence. Foundry computes prompt match from those checks and applies the selected policy on the server.
+**Passing score** defaults to the recommended **80/100** and can be changed from 50 to 100. The displayed overall score combines **40% prompt match + 25% image usability + 35% average applicable physical inspection**. The first passing attempt is accepted immediately; unused tries are not rendered. This replaces multiple competing score thresholds for new runs. Existing saved runs keep their original policy until you open **Adjust passing score / retry policy** and choose **Apply & continue**. This reassesses a saved review without another AI request, then continues Automatic mode. It does not re-plan the script.
 
-| Tolerance | Average prompt match | Minimum individual check | Image usability |
-| --- | --- | --- | --- |
-| Relaxed | 65/100 | 35/100 | 55/100 |
-| Balanced (default) | 75/100 | 50/100 | 65/100 |
-| Strict | 90/100 | 75/100 | 80/100 |
+A major visible defect, a failed physical category or missing **! must-have** blocks that image regardless of the overall score. Physical inspection has separate strictness: Balanced allows small imperfections but requires at least 60 in every applicable physical category; Relaxed requires 50; Strict requires 85 in anatomy/scene geometry and 80 in garments/lighting. Uncertain scores are capped below 60 and failed checks below 50. A must-have needs pass and at least 70. These are AI judgments, not measured accuracy. Inspect collections before posting.
 
-These are **AI judgments, not measured similarity or confidence probabilities**. Balanced accepts useful differences in pose angles, folds, small props and background placement. A clearly major visible defect blocks automatic acceptance. A **! must-have** must be visibly present and pass with at least 70/100. Uncertain or failed checks cannot be inflated by a contradictory high numerical score.
+**Automatic** approves the plan once, then renders, reviews, accepts/retries and advances on the server. **If all tries fail** defaults to **Continue automatically · flag the missing frame**. The run finishes its shot list, while clearly listing frames that need replacement. It never calls rejected images ready to post or copies them into `accepted`. Choose **Pause · let me review the attempts** to stop at that point instead. Provider errors, cancelled jobs and global spending caps still stop safely; automatic mode cannot guarantee every frame passes within finite limits.
 
-If an image meets tolerance, it is accepted and the next frame is queued. Otherwise Foundry retries the same prompt with a fresh seed, within the frame and global limits. It does not silently rewrite your approved scene. After exhausted retries, it pauses for attention; it does not automatically accept a bad frame or extend its budget.
+**Manual** stops after each reviewed image. Inspect its breakdown and choose Accept frame or Retry this frame. After acceptance use Render & review next frame. Accept does not ask a second confirmation.
 
-Inspect any attempt using the attempt picker. **Accept & continue** accepts the selected reviewed attempt immediately and continues the sequence—no “are you sure?” question. This is also how you override an overly strict reviewer. In Manual mode, Accept only advances the record; Render & review next frame starts the next image.
+**Preview plan** only plans; it never renders an image. Preview plan and New plan are disabled during planning, rendering, reviewing or an active automatic sequence. This prevents a new preview from overlapping an earlier run. Opening a saved run and changing options do not make API calls.
 
-## Physical inspection and collection folders
+## Anatomy, cohesion and collection folders
 
-New reviews separately inspect **anatomy**, **scene geometry**, **garment/material continuity** and **lighting/perspective**. The inspector traces visible body connectivity, support, hand/object contact and occlusion; a pretty face or high prompt score cannot override a major visible defect. Intentional crops, body shapes and foreshortening are not defects by themselves. The panel shows evidence for each category separately from prompt-match details.
+The inspector checks anatomy, support/contact/occlusion, garment continuity, and light/perspective/integration before assessing prompt match. API reviews receive the full view and two labelled crops of the same image in one request. Local Qwen receives the full view only. Crops increase image-token usage. Intentional crops, body shapes and foreshortening are not defects by themselves; reviews can still miss defects or over-flag details.
 
-| Physical score floor | Anatomy / scene geometry | Clothing / light |
-| --- | --- | --- |
-| Relaxed | 70 | 60 |
-| Balanced | 85 | 80 |
-| Strict | 90 | 85 |
+Choose **IG carousel**, then write its theme. Switching templates preserves your custom brief. Before approving, edit the AI **Project name**, or choose a custom collection folder. New outputs use `ComfyUI output/PromptMage-Foundry/<project>/attempts` and `accepted`. Duplicate folder names get a number; legacy folders stay unchanged. Native accepted PNGs preserve workflow metadata when available. `collection.json` lists accepted images, planned count and skipped frames; it does not publish anything to Instagram.
 
-**Physical inspection** has its own Relaxed/Balanced/Strict selector, independent of prompt-match tolerance. A major defect always blocks automatic acceptance. Uncertain categories cannot pass through an inflated score. Object-only scenes may mark anatomy not applicable. These are still fallible vision judgments; inspect the accepted collection before publishing. Old completed reviews are retained and labelled as legacy rather than silently re-scored. Explicit saved-image recovery refreshes an old reply if it lacks the new inspection fields. Detail crops increase API image-token usage but do not add a separate review request.
+## API assistants
 
-Choose **IG carousel**, then write what kind of carousel you want; the template does not assume a holiday. Switching templates preserves your custom brief.
+Foundry supports Local Qwen, DeepSeek Flash, OpenAI and Gemini. Each API provider has its own masked, persistent-key panel. Add, replace or remove affects only that provider. Keys stay in the ComfyUI user credential directory and are never serialized into workflows; persist that directory on RunPod.
 
-The planner proposes a **Project name**, editable before approval. New collections use that readable name under **ComfyUI output/PromptMage-Foundry**, or the optional **Custom folder name**. Duplicate names receive a numeric suffix. All native render tries stay in **attempts**; accepted frames are copied into **accepted**, preferring native PNGs to retain their workflow metadata. **collection.json** lists the accepted frame files. Existing UUID-based folders are kept unchanged. Internal run IDs remain stable.
+- **OpenAI:** GPT-6.1 Terra is the recommended lower-cost Terra/Sol option; Sol, budget Luna and high-cost Astra are available. Text and image inputs use the [Responses API](https://developers.openai.com/api/docs/models/gpt-6.1-terra).
+- **Gemini:** 3.8 Flash is recommended, with 3.5 Flash-Lite and 4 Argon alternatives from the [official model catalog](https://ai.google.dev/gemini-api/docs/models). The adapter uses [GenerateContent](https://ai.google.dev/api/generate-content), inline image data and an API-key header. Provider policies and model/project access apply.
+- **DeepSeek:** Flash supports actual-image review. V4 Pro remains text-only and is not offered for this pipeline.
+
+No paid request is retried automatically after a provider/connection error. API model availability and pricing may change. Gemini integration has mocked request/key/error coverage; a live Gemini test requires a Gemini key.
 
 ## References, templates and persistence
 
@@ -64,7 +60,7 @@ Runs, reviews and frozen prompts live under **ComfyUI user/prompt_mage/foundry/r
 
 Provider errors, malformed replies, cancellation, exhausted retries and spending limits stop with a visible explanation. There are no automatic retries of failed API requests. **Review saved image** recovers an unfinished review without another render, then resumes an automatic sequence. Reviewer replies are saved privately under `foundry/reviews`, bound to the exact PNG hash. Recovery first tries reparsing that reply for free; if it is unusable, the explicit recovery action can make one fresh review request. Already submitted requests may still be billable. A server restart is different from closing the browser: reopen the saved run and resume/recover it explicitly; jobs lost from ComfyUI’s queue are not silently replayed.
 
-Common status variants (such as Passed or Partially met) and numeric strings are normalized. Partial matches can meet Relaxed/Balanced tolerance but cannot satisfy **! must-have** checks; Strict still rejects them. An unfamiliar status never turns into a pass and does not trigger an image rerender merely because the review format was unreadable.
+Common status variants (such as Passed or Partially met) and numeric strings are normalized. Partial matches can count toward the overall score but cannot satisfy **! must-have** checks. Strict physical inspection adds higher per-category minimums. An unfamiliar status never turns into a pass and does not trigger an image rerender merely because the review format was unreadable.
 
 ## Architecture and validation
 
@@ -75,7 +71,7 @@ flowchart LR
     C --> D[Server controller reserves attempt]
     D --> E[Native partial graph execution]
     E --> F[Archive actual image and score review]
-    F --> G{Within tolerance?}
+    F --> G{Passing score and no blocking defects?}
     G -->|Yes| H[Accept and advance]
     H -->|Frames remain| D
     G -->|No, tries remain| D
@@ -91,3 +87,5 @@ A live two-frame smoke test also completed on an RTX 3090 using ComfyUI 0.42.0, 
 DeepSeek’s [official model table](https://api-docs.deepseek.com/quick_start/pricing/) and [vision guide](https://api-docs.deepseek.com/guides/vision/) identify `deepseek-flash` as the V4.1 Flash image-capable API option. V4 Pro is text-only; Foundry rejects it for automatic image review. Provider aliases and pricing may change.
 
 A bounded physical-inspection audit used two existing outputs without running diffusion again. The first rubric still accepted ambiguous clothing geometry and over-flagged the control. After calibration, the revised reviewer rejected the ambiguous garment construction and accepted the control. This is a small development check, not a reliability benchmark; model judgments vary and can still miss defects.
+
+The 1.26 OpenAI smoke test used GPT-6.1 Terra on a two-frame cafe carousel at 1728 × 2144. Preview plan produced zero image attempts. After one approval, the server rendered/reviewed/accepted both frames on their first tries, with overall scores 94 and 86: two renders, five assistant calls, no extra approvals. A separate short request also verified GPT-6.1 Sol connectivity. Gemini has request, image forwarding, key isolation and failure tests but was not live-tested without a configured Gemini key.

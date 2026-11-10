@@ -39,7 +39,7 @@ Restart ComfyUI, refresh the browser, then search **Prompt Mage** or **Archmage*
 
 ## Pick the right tool
 
-**[Foundry (Experimental)](docs/FOUNDRY_EXPERIMENT.md):** approve a script once, then the server renders, reviews with adjustable tolerance, retries and advances automatically. Checks anatomy and physical scene cohesion separately from prompt match, names collection folders, and gathers accepted frames. Includes Archmage styles, IG carousel templates and a numbered drag-and-drop reference gallery for outfits, poses and props. [Separate testing workflow](workflows/experimental/01-foundry-single-frame-moss.json); Grimoire workflows stay independent.
+**[Foundry (Experimental)](docs/FOUNDRY_EXPERIMENT.md):** approve a script once, then the server renders, reviews against an adjustable passing score, retries and advances automatically. Supports Local Qwen, DeepSeek, OpenAI and Gemini. Checks anatomy and physical scene cohesion separately from prompt match, names collection folders, and gathers accepted frames. Includes Archmage styles, IG carousel templates and a numbered drag-and-drop reference gallery for outfits, poses and props. [Separate testing workflow](workflows/experimental/01-foundry-single-frame-moss.json); Grimoire workflows stay independent.
 
 **[Chat → Apply → Generate](docs/SPELL_SCROLL.md):** Grimoire handles conversation. Click **Use this prompt** on a chosen reply; **Spell Scroll** reads that approved snapshot for image generation. Further chat never silently changes it, and normal workflow runs never call the assistant.
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.26.0 — Passing scores, uninterrupted sequences and provider choice
+
+- Adds an adjustable overall passing score (recommended 80): 40% prompt match, 25% usability, 35% physical inspection. The first passing try advances immediately; major visible defects and must-have checks remain hard stops for that image.
+- Automatic mode can flag an exhausted frame and continue through the shot list, without approving each image. Missing frames are clearly listed; rejected attempts never enter the accepted collection. Pause for review remains optional.
+- Disables Preview plan and New plan during Manual or Automatic processing, preventing overlapping planning and render sequences.
+- Adds OpenAI Terra/Sol/Luna/Astra and Gemini Flash/Flash-Lite/Argon choices to Foundry, with isolated masked server-saved API key panels. No keys in workflows.
+
 ## 1.25.1 — Safe idle execution
 
 - Normal ComfyUI Run with no Foundry plan, unavailable run or stale attempt now blocks downstream execution cleanly and shows guidance in the panel. It does not create a plan, render attempt or assistant request.

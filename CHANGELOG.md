@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.4 — Clear physical inspection controls
+
+- Exposes physical inspection strictness when adjusting an existing run's review policy. Balanced allows minor imperfections; Strict retains its higher category floors even above the overall passing score.
+- Shows category scores and blocking thresholds in retry explanations. Adds regression coverage for advancing immediately after a passing review with minor physical imperfections.
+
 ## 1.27.3 — Reliable brief rule lists
 
 - Accepts plain text lists for production shared/review rules and preserves their order as newline-separated text. Keeps size/type validation and rejects nested structures.

@@ -32,7 +32,9 @@ def assessment(review,criteria,tolerance='Balanced',physical_tolerance=None,pass
             if not item or not item.get('applicable',True):continue
             score=min(item['score'],49 if item['status']=='fail' else 59 if item['status']=='uncertain' else 85 if item['status']=='partial' else 100)
             physical.append(score)
-            if item['severity']=='major' or item['status']=='fail' or score<floor:hard.append(label+': '+item['evidence'])
+            if item['severity']=='major' or item['status']=='fail' or score<floor:
+                gate='major visible defect' if item['severity']=='major' else 'failed physical check' if item['status']=='fail' else f'{physical_tolerance or "Balanced"} minimum {floor}'
+                hard.append(f'{label} ({score}/100; {gate}): '+item['evidence'])
         physical_score=sum(physical)/len(physical) if physical else review.get('quality_score',75)
         overall=round(match*.4+review.get('quality_score',75)*.25+physical_score*.35)
         reasons=list(hard);physical_issues=list(hard)

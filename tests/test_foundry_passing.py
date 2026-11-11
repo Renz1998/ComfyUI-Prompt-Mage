@@ -15,6 +15,15 @@ class PassingScoreTests(unittest.TestCase):
         r=ai.validate_review(json.loads(fixture.FoundryTests.review_json()),['Map','Person'],require_integrity=True)
         r['visual_integrity']['anatomy'].update(severity='major',score=95)
         self.assertFalse(assessment(r,['Map','Person'],'Relaxed','Relaxed',50)['acceptable'])
+    def test_strict_physical_floor_explains_why_a_high_overall_score_retries(self):
+        r=ai.validate_review(json.loads(fixture.FoundryTests.review_json()),['Map','Person'],require_integrity=True)
+        r['visual_integrity']['anatomy'].update(score=74,status='partial',severity='minor')
+        r['visual_integrity']['spatial'].update(score=72,status='partial',severity='minor')
+        strict=assessment(r,['Map','Person'],'Balanced','Strict',80)
+        self.assertGreaterEqual(strict['overall_score'],80)
+        self.assertFalse(strict['acceptable'])
+        self.assertIn('74/100; Strict minimum 85',strict['decision_reason'])
+        self.assertTrue(assessment(r,['Map','Person'],'Balanced','Balanced',80)['acceptable'])
     def test_visible_fail_and_missing_essentials_still_block(self):
         r=ai.validate_review(json.loads(fixture.FoundryTests.review_json()),['Map','Person'],require_integrity=True)
         r['visual_integrity']['spatial'].update(status='fail',score=95)

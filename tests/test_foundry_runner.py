@@ -84,6 +84,21 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
         self.ready();self.score_sequence=[30,85,85];await runner.run(self.server,self.id,poll=0.001)
         value=store.read(self.id);self.assertEqual(value['status'],'complete');self.assertEqual(len(self.submitted),3)
         self.assertEqual([a['shot_id'] for a in value['attempts']],['shot-1','shot-1','shot-2']);self.assertEqual(len({a['seed'] for a in value['attempts']}),3)
+    async def test_balanced_minor_physical_issues_advance_after_first_passing_attempt(self):
+        self.ready(count=2,tries=3)
+        original=self.finish
+        async def minor_issues(entry):
+            await original(entry)
+            value=store.read(self.id)
+            value['attempts'][-1]['review']['visual_integrity']={key:dict(applicable=True,status='partial',score=score,severity='minor',evidence='Minor imperfection, coherent scene.') for key,score in [('anatomy',74),('spatial',72),('clothing',85),('lighting',85)]}
+            store.write(value)
+        self.finish=minor_issues
+        await runner.run(self.server,self.id,poll=0.001)
+        value=store.read(self.id)
+        self.assertEqual(value['status'],'complete')
+        self.assertEqual(len(self.submitted),2)
+        self.assertEqual([a['shot_id'] for a in value['attempts']],['shot-1','shot-2'])
+        self.assertEqual(len(value['accepted']),2)
     async def test_attempt_limit_pauses_instead_of_looping_or_silently_accepting(self):
         self.ready(count=1,tries=2);v=store.read(self.id);v['failure_policy']='Pause for review';store.write(v);self.score_sequence=[20,20];await runner.run(self.server,self.id,poll=0.001)
         value=store.read(self.id);self.assertEqual(value['status'],'needs_attention');self.assertEqual(len(self.submitted),2);self.assertEqual(value['accepted'],[])

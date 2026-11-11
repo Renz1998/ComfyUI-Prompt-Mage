@@ -50,6 +50,7 @@ class PromptMageFoundry(BaseNode):
             'production_brief':('MAGE_PRODUCTION_BRIEF',{'lazy':True,'tooltip':'Connect Grimoire.production_brief. Send a brief explicitly in Grimoire to fill this new plan. Chatting and rendering never refresh it automatically.'}),
             'brief_id':('STRING',{'default':'','tooltip':'Managed by explicit Grimoire brief import. Approved plans freeze the imported snapshot.'}),
             'output_folder':('STRING',{'default':'','tooltip':'Optional collection folder name inside ComfyUI output/PromptMage-Foundry. Empty uses the AI project title. Accepted images are collected in its accepted subfolder.'}),
+            'review_profile':(list(store.REVIEWERS),{'default':'Same as assistant','tooltip':'Independent image-review model, frozen with the plan. Same as assistant preserves current behavior. API reviewers use their own saved provider key and share the run call cap.'}),
         }}
 
     def check_lazy_status(self,**kwargs):return []
@@ -98,7 +99,7 @@ class PromptMageFoundryPlan(PromptMageFoundry):
             from ..dart.production_brief import read
             imported=read(brief_id)
             if appearance is None:appearance=imported.get('appearance')
-        with store.LOCK:value=store.create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance,assistant_profile,style_preset,style_notes,review_tolerance,run_mode,output_folder,physical_tolerance,passing_score,failure_policy)
+        with store.LOCK:value=store.create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance,assistant_profile,style_preset,style_notes,review_tolerance,run_mode,output_folder,physical_tolerance,passing_score,failure_policy,review_profile=kwargs.get('review_profile','Same as assistant'))
         if imported:
             value['production_brief_source']={k:imported[k] for k in ('id','conversation_id','title','created')};store.write(value)
         images=[(name,kwargs[name]) for name in ('image',*[f'image_{i}' for i in range(2,7)]) if kwargs.get(name) is not None]

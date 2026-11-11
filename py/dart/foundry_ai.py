@@ -24,11 +24,12 @@ def encoder_for(config,clip=None):
     raise ValueError('Unsupported source assistant provider.')
 
 
-def generate(value,system,prompt,clip=None,image=None):
-    encoder=encoder_for(value['config'],clip)
+def generate(value,system,prompt,clip=None,image=None,config=None):
+    config=value['config'] if config is None else config
+    encoder=encoder_for(config,clip)
     store.charge(value['id'])
-    kwargs=dict(prompt=prompt,system_prompt=system,max_length=min(8192,max(1024,int(value['config'].get('max_tokens',4096)))),
-        thinking=bool(value['config'].get('thinking',False)),sampling_mode={'sampling_mode':'off'},mtp='off')
+    kwargs=dict(prompt=prompt,system_prompt=system,max_length=min(8192,max(1024,int(config.get('max_tokens',4096)))),
+        thinking=bool(config.get('thinking',False)),sampling_mode={'sampling_mode':'off'},mtp='off')
     if image is not None:kwargs['image']=image
     answer=final_text(execute_generation(encoder,**kwargs),thinking=kwargs['thinking'])
     if not answer.strip():raise ValueError('Assistant returned no final answer. Adjust the source chat token/thinking settings and create a new test.')
@@ -37,6 +38,9 @@ def generate(value,system,prompt,clip=None,image=None):
 
 def plan(value,clip=None,images=None,attachments='[]',reference_instructions='',reference_roles='{}'):
     try:
+        review_config=store.reviewer_config(value)
+        if value.get('review_profile','Same as assistant')!='Same as assistant' and review_config.get('assistant_backend')!='Local Qwen':
+            encoder_for(review_config)  # Check the separate review key without an API call or local model load.
         from .grimoire_attachments import load_attachment,attachment_image
         from .vision import prepare_caption_image
         if len(attachments)>2048 or len(reference_roles)>4096:raise ValueError('Too many planning reference settings.')
@@ -262,7 +266,8 @@ def review(run_id,attempt_id,image=None,clip=None):
             if getattr(PromptServer,'instance',None) is not None:
                 from .foundry_runner import notify
                 notify(PromptServer.instance,current)
-        prepared,view_labels=review_views(image,value['config']['assistant_backend'])
+        review_config=store.reviewer_config(value)
+        prepared,view_labels=review_views(image,review_config['assistant_backend'])
         system='''You are Foundry's technical image inspector. FIRST inspect the ACTUAL pixels for anatomy and physical scene coherence, THEN assess prompt match. Attractive lighting, a pretty face and correct props do not make a broken image acceptable.
 Return one JSON object. Include visual_integrity BEFORE checks:
 {"visual_integrity":{"anatomy":{"applicable":true,"status":"pass|partial|fail|uncertain","score":85,"severity":"none|minor|major","evidence":"visible body connectivity and proportions"},"spatial":{"applicable":true,"status":"pass|partial|fail|uncertain","score":85,"severity":"none|minor|major","evidence":"pose, support, contact and depth order"},"clothing":{"applicable":true,"status":"pass|partial|fail|uncertain","score":85,"severity":"none|minor|major","evidence":"garment continuity and materials"},"lighting":{"applicable":true,"status":"pass|partial|fail|uncertain","score":85,"severity":"none|minor|major","evidence":"light, shadows, perspective and compositing"}},"checks":[{"id":"c1","status":"pass|partial|fail|uncertain","score":85,"evidence":"what is actually visible"}],"quality_score":85,"major_defect":false,"summary":"short practical assessment","suggestion":"one minimal change, or empty"}.
@@ -289,13 +294,14 @@ Keep aesthetic judgments grounded in visible composition/light/materials. The ho
             try:result=validate_review(select_json(cached),shot['criteria'],require_scores=True,require_integrity=True)
             except (ValueError,TypeError):pass
         if result is None:
-            answer=generate(value,system,json.dumps(dict(shot=shot['brief'],shared_rules=value['shared_rules'],review_rules=value['review_rules'],criteria=criteria,style=value['config'].get('style_preset'),tolerance=value.get('review_tolerance','Balanced'),image_views=view_labels),ensure_ascii=False),clip,prepared)
+            answer=generate(value,system,json.dumps(dict(shot=shot['brief'],shared_rules=value['shared_rules'],review_rules=value['review_rules'],criteria=criteria,style=value['config'].get('style_preset'),tolerance=value.get('review_tolerance','Balanced'),image_views=view_labels),ensure_ascii=False),clip,prepared,config=review_config)
             save_review_response(run_id,attempt_id,answer)
             try:result=validate_review(select_json(answer),shot['criteria'],require_scores=True,require_integrity=True)
             except (ValueError,TypeError) as error:
                 raise ValueError('Image saved, but the reviewer response could not be read: '+str(error)+' Use Review saved image; no new render is needed.') from None
         from .foundry_review import assessment
         result.update(assessment(result,shot['criteria'],value.get('review_tolerance','Balanced'),value.get('physical_tolerance','Balanced'),value.get('passing_score')))
+        result.update(reviewer_backend=review_config['assistant_backend'],reviewer_model=review_config.get('openai_model') if review_config['assistant_backend']=='OpenAI API' else review_config.get('deepseek_model') if review_config['assistant_backend']=='DeepSeek API' else review_config.get('gemini_model') if review_config['assistant_backend']=='Gemini API' else review_config.get('local_model','Automatic'))
         with store.LOCK:
             current=store.read(run_id);attempt=store.attempt_for(current,attempt_id);attempt.update(status='reviewed',review=result,error='')
             if current['status'] not in ('stopped','paused'):current['status']='awaiting_approval'

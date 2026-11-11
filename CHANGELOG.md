@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.28.0 — Independent image-review model
+
+- Adds an Image review model selector independent of planning/prompt writing. Same as assistant preserves existing behavior; OpenAI, DeepSeek Flash, Gemini and Local Qwen can be selected separately.
+- Freezes both configurations with each plan, checks a separate API review key before planning, and shows the actual reviewer in the settings overview and image assessment. Review calls use the existing shared call cap.
+- Handles mixed local/API encoder dependencies for rendering and saved-review recovery. Older runs continue using their original assistant for reviews.
+
 ## 1.27.4 — Clear physical inspection controls
 
 - Exposes physical inspection strictness when adjusting an existing run's review policy. Balanced allows minor imperfections; Strict retains its higher category floors even above the overall passing score.

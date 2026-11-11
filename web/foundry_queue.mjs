@@ -2,12 +2,12 @@ export const FOUNDRY='DanbooruTagsTransformerFoundry';
 export const REVIEW=FOUNDRY+'ReviewOutput';
 const link=(value,id,slot)=>Array.isArray(value)&&String(value[0])===String(id)&&value[1]===slot;
 
-export function foundryPrompt(snapshot,nodeId,operation,{runId,attemptId='',remote=false}={}) {
+export function foundryPrompt(snapshot,nodeId,operation,{runId,attemptId='',remote=false,reviewRemote=remote}={}) {
     const id=String(nodeId),graph=JSON.parse(JSON.stringify(snapshot.output));
     if(graph[id]?.class_type!==FOUNDRY)throw Error('Foundry is disabled or missing.');
     delete graph[id].inputs.production_brief;
     graph[id].inputs.run_id=runId;graph[id].inputs.attempt_id=attemptId;
-    if(remote)delete graph[id].inputs.clip;
+    if(operation==='review_saved'?reviewRemote:remote)delete graph[id].inputs.clip;
     if(operation==='review_saved')for(const key of Object.keys(graph[id].inputs))if(key==='image'||key.startsWith('image_')||key==='attachments')delete graph[id].inputs[key];
     function ancestors(key,seen=new Set(),stack=new Set()) {
         key=String(key);if(stack.has(key))throw Error('Foundry input cycle.');if(seen.has(key))return seen;
@@ -23,7 +23,7 @@ export function foundryPrompt(snapshot,nodeId,operation,{runId,attemptId='',remo
         for(const key of Object.keys(graph[id].inputs))if(key==='image'||key.startsWith('image_')||key==='attachments')delete graph[id].inputs[key];
         const sinks=Object.entries(graph).filter(([,n])=>n.class_type===REVIEW&&link(n.inputs.run_id,id,4)&&link(n.inputs.attempt_id,id,5));
         if(sinks.length!==1)throw Error('Connect exactly one Foundry Review Output to this node’s run_id and attempt_id.');
-        const [sinkId,sink]=sinks[0];if(remote)delete sink.inputs.clip;
+        const [sinkId,sink]=sinks[0];if(reviewRemote)delete sink.inputs.clip;
         if(!Array.isArray(sink.inputs.image))throw Error('Connect the final decoded image to Review Output.');
         const chain=ancestors(sink.inputs.image[0]);
         if(!chain.has(id)||![...chain].some(key=>Object.values(graph[key].inputs||{}).some(v=>link(v,id,0))))throw Error('The reviewed image must use this Foundry prompt.');

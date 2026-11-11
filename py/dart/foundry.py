@@ -13,6 +13,24 @@ ASSISTANTS=('Local Qwen','DeepSeek V4.1 Flash · Recommended · Text + images','
 from .openai_assistant import MODELS as OPENAI_MODELS
 from .gemini_assistant import MODELS as GEMINI_MODELS
 ASSISTANTS=ASSISTANTS+tuple('OpenAI · '+name for name in OPENAI_MODELS)+tuple('Gemini · '+name for name in GEMINI_MODELS)
+REVIEWERS=('Same as assistant',)+tuple(p for p in ASSISTANTS if p!='From chat / Local Qwen')
+
+
+def reviewer_config(value):
+    """Old saved runs keep their original assistant for review."""
+    return value.get('review_config') or value['config']
+
+
+def review_settings(profile,config):
+    if profile not in REVIEWERS:raise ValueError('Choose a supported Foundry review model.')
+    result=copy.deepcopy(config)
+    if profile=='Local Qwen':result.update(assistant_backend='Local Qwen',local_model='Automatic')
+    elif profile==ASSISTANTS[1]:
+        from .deepseek_assistant import DEFAULT_MODEL
+        result.update(assistant_backend='DeepSeek API',deepseek_model=DEFAULT_MODEL)
+    elif profile.startswith('OpenAI · '):result.update(assistant_backend='OpenAI API',openai_model=profile.removeprefix('OpenAI · '))
+    elif profile.startswith('Gemini · '):result.update(assistant_backend='Gemini API',gemini_model=profile.removeprefix('Gemini · '))
+    return result
 BUILTINS = {
     'single': dict(name='Single scene test', brief='An adult traveler in a green wool cloak studies a map in a lantern-lit wooden inn.', shared_rules='Keep the chosen character, medium and canvas consistent.', review_rules='Check the requested action, major props and camera logic.', shot_count=1),
     'carousel': dict(name='IG carousel', brief='', shared_rules='Keep the chosen character and visual treatment consistent. Allow intentional outfit and location changes.', review_rules='Check the approved scene, physical plausibility and visual cohesion. Allow deliberate crops and useful creative variations.', shot_count=7),
@@ -111,7 +129,7 @@ def source_settings(conversation_id):
     return config,context
 
 
-def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance=None,assistant_profile=ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',review_tolerance='Balanced',run_mode='Automatic',output_folder='',physical_tolerance='Balanced',passing_score=80,failure_policy='Skip frame and continue'):
+def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,shot_count,width,height,max_attempts,max_renders,max_calls,appearance=None,assistant_profile=ASSISTANTS[0],style_preset='Photo · Bright lifestyle',style_notes='',review_tolerance='Balanced',run_mode='Automatic',output_folder='',physical_tolerance='Balanced',passing_score=80,failure_policy='Skip frame and continue',review_profile='Same as assistant'):
     from .moss import canvas_size
     checked_id(run_id);canvas_size(width,height)
     if isinstance(passing_score,bool) or not isinstance(passing_score,int) or not 50<=passing_score<=100:raise ValueError('Passing score must be 50–100.')
@@ -140,7 +158,8 @@ def create(run_id,conversation_id,template_id,brief,shared_rules,review_rules,sh
         from .deepseek_assistant import MODELS, DEFAULT_MODEL
         if MODELS.get(config.get('deepseek_model',DEFAULT_MODEL))!='deepseek-flash':
             raise ValueError('Foundry needs image review. Choose DeepSeek V4.1 Flash; V4 Pro is text-only.')
-    value=dict(version=1,id=run_id,created=time.time(),status='planning',source_conversation=conversation_id,config=config,context=context,
+    review_config=review_settings(review_profile,config)
+    value=dict(version=1,id=run_id,created=time.time(),status='planning',source_conversation=conversation_id,config=config,context=context,review_config=review_config,review_profile=review_profile,
         template=template_id,assistant_profile=assistant_profile,brief=text(brief or selected['brief'],'Brief'),shared_rules=shared_rules[:8000],review_rules=review_rules[:8000],
         shot_count=shot_count,width=width,height=height,appearance=copy.deepcopy(appearance),
         limits=dict(attempts=max_attempts,renders=max_renders,calls=max_calls),usage=dict(renders=0,calls=0),
@@ -241,6 +260,7 @@ def action(run_id,operation,data=None):
 def public(value):
     result={key:copy.deepcopy(v) for key,v in value.items() if key not in ('context','appearance','compiled','reference_context')}
     result['assistant']=value['config'].get('assistant_backend','Local Qwen')
+    result['review_assistant']=reviewer_config(value).get('assistant_backend','Local Qwen')
     return result
 
 

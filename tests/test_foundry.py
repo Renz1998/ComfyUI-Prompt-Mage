@@ -101,7 +101,7 @@ class FoundryTests(unittest.TestCase):
         gen.assert_not_called();self.assertEqual(result['status'],'plan_ready')
     def test_review_finishing_during_pause_can_be_accepted_after_resume(self):
         attempt,_,_=self.composed()
-        def result(*args):
+        def result(*args,**kwargs):
             store.action(self.id,'pause')
             return self.review_json()
         with patch.object(ai,'generate',side_effect=result):value=ai.review(self.id,attempt['id'],torch.zeros(1,16,16,3))

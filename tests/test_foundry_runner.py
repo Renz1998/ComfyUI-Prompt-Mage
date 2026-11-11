@@ -142,6 +142,31 @@ class RunnerTests(unittest.IsolatedAsyncioTestCase):
     async def test_duplicate_start_returns_same_task(self):
         self.ready();self.gate=asyncio.Event();first=runner.start(self.server,self.id);self.assertIs(first,runner.start(self.server,self.id));first.cancel()
         await asyncio.gather(first,return_exceptions=True)
+    async def test_local_planner_keeps_clip_but_api_reviewer_drops_it(self):
+        self.ready(count=1);value=store.read(self.id)
+        value['review_config']={'assistant_backend':'OpenAI API'};store.write(value)
+        recipe=runner.load_recipe(self.id)
+        for key in ('1','7'):recipe['output'][key]['inputs']['clip']=['9',0]
+        attempt=store.reserve(self.id)
+        await runner.submit(self.server,self.id,attempt,recipe)
+        graph=self.submitted[-1][2]
+        self.assertIn('clip',graph['1']['inputs']);self.assertNotIn('clip',graph['7']['inputs'])
+        await asyncio.sleep(.01)
+    async def test_api_planner_preserves_clip_for_local_review_and_saved_recovery(self):
+        self.ready(count=1);value=store.read(self.id)
+        value['config']['assistant_backend']='OpenAI API';value['review_config']={'assistant_backend':'Local Qwen'};store.write(value)
+        recipe=runner.load_recipe(self.id)
+        for key in ('1','7'):recipe['output'][key]['inputs']['clip']=['9',0]
+        attempt=store.reserve(self.id)
+        await runner.submit(self.server,self.id,attempt,recipe)
+        graph=self.submitted[-1][2]
+        self.assertNotIn('clip',graph['1']['inputs']);self.assertIn('clip',graph['7']['inputs'])
+        await asyncio.sleep(.01)
+        value=store.read(self.id);value['status']='reviewing';store.write(value)
+        recipe['output']['1']['inputs'].pop('clip')  # API planning snapshot omitted it; use the review sink's shared encoder.
+        await runner.submit(self.server,self.id,attempt,recipe,'review_saved')
+        self.assertIn('clip',self.submitted[-1][2]['1']['inputs'])
+        await asyncio.sleep(.01)
     async def test_worker_review_error_is_broadcast_to_the_ui(self):
         self.ready();events=[];self.server.send_sync=lambda name,payload:events.append(payload['foundry'][0])
         async def failed_review(entry):

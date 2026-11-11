@@ -363,4 +363,4 @@ app.registerExtension({
     },
 });
 import './grimoire.mjs?v=1.27.0';
-import './foundry.mjs?v=1.27.0';
+import './foundry.mjs?v=1.28.0';

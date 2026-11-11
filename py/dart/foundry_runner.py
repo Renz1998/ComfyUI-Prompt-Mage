@@ -76,8 +76,14 @@ async def submit(server,run_id,attempt,recipe,operation='render'):
     inputs.update(run_id=run_id,attempt_id=attempt['id'],width=value['width'],height=value['height'])
     targets=recipe['targets'] if operation=='render' else [node_id]
     if operation=='review_saved':graph[node_id]['class_type']=FOUNDRY+'ReviewSaved'
-    if value['config']['assistant_backend']!='Local Qwen':
-        inputs.pop('clip',None)
+    node_config=store.reviewer_config(value) if operation=='review_saved' else value['config']
+    if operation=='review_saved' and node_config['assistant_backend']=='Local Qwen' and 'clip' not in inputs:
+        for target in recipe['targets']:
+            sink=graph[target]
+            if sink['class_type']==FOUNDRY+'ReviewOutput' and 'clip' in sink['inputs']:
+                inputs['clip']=copy.deepcopy(sink['inputs']['clip']);break
+    if node_config['assistant_backend']!='Local Qwen':inputs.pop('clip',None)
+    if store.reviewer_config(value)['assistant_backend']!='Local Qwen':
         for target in recipe['targets']:
             if graph[target]['class_type']==FOUNDRY+'ReviewOutput':graph[target]['inputs'].pop('clip',None)
     payload=dict(prompt=graph,partial_execution_targets=targets,client_id=recipe['client_id'],extra_data={'extra_pnginfo':{'workflow':recipe['workflow']}})

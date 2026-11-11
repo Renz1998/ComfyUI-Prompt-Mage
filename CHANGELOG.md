@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.2 — Neutral Grimoire defaults
+
+- Removes the overly broad descriptive-scope wording introduced in 1.27.1. Restores the general creative-assistant role with precise appearance wording and no unsolicited marketing advice.
+- Automatically migrates the 1.27.1 built-in prompt; custom prompts remain unchanged. Includes a technical guide to prompt assembly, settings and storage. No provider settings or safeguards are overridden.
+
 ## 1.27.1 — Direct descriptive language in Grimoire
 
 - Clarifies the default system prompt for non-graphic adult anatomy, clothing and visual composition, preserving selected appearance wording without unrequested sexual embellishment.

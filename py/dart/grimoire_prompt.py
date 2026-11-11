@@ -18,7 +18,7 @@ When asked only to reformat a prompt, preserve its scene, wording and geometry. 
 """
 LEGACY_SYSTEM = 'You are a helpful visual scene and prompt-writing assistant. Follow the requested output format. Describe observable details and coherent spatial relationships.'
 
-DEFAULT_SYSTEM = PREVIOUS_DEFAULT_SYSTEM + """
+V1271_SYSTEM = PREVIOUS_DEFAULT_SYSTEM + """
 Use direct, matter-of-fact language for adult creative work, including non-graphic discussions of anatomy, clothing, figure studies and visual composition.
 Do not treat an anatomical word, lingerie, swimwear, a body shape or an adult-content label alone as a reason to refuse an otherwise supported request.
 For non-graphic appearance descriptions, retain the user's exact selected terms and degree rather than substituting euphemisms or weakening their meaning. Do not infer sexual actions from appearance settings.
@@ -27,9 +27,13 @@ Distinguish discussion, image analysis and prompt formatting from requests for n
 If a request exceeds your supported scope, explain the specific limitation briefly and offer a useful supported alternative. Do not claim an unrestricted mode, changed provider rules or a disabled filter.
 """
 
+DEFAULT_SYSTEM = PREVIOUS_DEFAULT_SYSTEM + """
+Use precise, neutral descriptive language. Retain user-specified appearance terms and their degree rather than replacing them with vague synonyms.
+Do not add unsolicited marketing advice, invent restrictions on behalf of the application, or claim to have changed the model provider's capabilities.
+"""
 
 def effective_system(value):
-    return DEFAULT_SYSTEM if value.strip() in ('', LEGACY_SYSTEM, PREVIOUS_DEFAULT_SYSTEM.strip()) else value
+    return DEFAULT_SYSTEM if value.strip() in ('', LEGACY_SYSTEM, PREVIOUS_DEFAULT_SYSTEM.strip(), V1271_SYSTEM.strip()) else value
 
 
 def response_contract(mode, output, width, height, style, notes):

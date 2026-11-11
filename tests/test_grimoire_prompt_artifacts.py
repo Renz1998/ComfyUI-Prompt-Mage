@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
-from dart_plugin.py.dart.grimoire_prompt import compile_moss_response, response_output_mode, prepare_turn, DEFAULT_SYSTEM, LEGACY_SYSTEM, PREVIOUS_DEFAULT_SYSTEM, effective_system
+from dart_plugin.py.dart.grimoire_prompt import compile_moss_response, response_output_mode, prepare_turn, DEFAULT_SYSTEM, LEGACY_SYSTEM, PREVIOUS_DEFAULT_SYSTEM, V1271_SYSTEM, effective_system
 from dart_plugin.py.dart.grimoire import memory_path, save_memory, select_output
 from dart_plugin.py.dart.spell_scroll import approve, prompt_from_scroll
 
@@ -56,6 +56,7 @@ class PromptArtifactTests(unittest.TestCase):
     def test_conversation_and_personality_preserve_custom_system_prompts(self):
         self.assertEqual(effective_system(LEGACY_SYSTEM),DEFAULT_SYSTEM)
         self.assertEqual(effective_system(PREVIOUS_DEFAULT_SYSTEM),DEFAULT_SYSTEM)
+        self.assertEqual(effective_system(V1271_SYSTEM),DEFAULT_SYSTEM)
         self.assertIn('warm',DEFAULT_SYSTEM)
         self.assertEqual(effective_system('Be a formal technical editor.'),'Be a formal technical editor.')
         self.assertEqual(response_output_mode('Let’s try a warmer window light.','Conversation','MOSS JSON layout'),'Latest response')

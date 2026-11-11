@@ -1,6 +1,6 @@
 # Grimoire (Beta)
 
-**Direct descriptive language (1.27.1):** the built-in system prompt distinguishes non-graphic adult anatomy, clothing and figure studies from sexual actions. It requests literal appearance wording, without euphemisms or unrequested erotic embellishment. Earlier built-in prompts upgrade on the next turn; custom system prompts remain yours to edit under Instructions.
+**Neutral defaults (1.27.2):** the built-in system prompt uses the general creative-assistant role with precise appearance wording. The overly broad scope language added in 1.27.1 has been removed. Earlier built-in prompts upgrade on the next turn; custom system prompts remain yours to edit under Instructions. See the [technical configuration guide](GRIMOIRE_CONFIGURATION.md) for prompt assembly and storage.
 
 DeepSeek Flash uses the official `deepseek-flash` API alias. The [official API parameters](https://api-docs.deepseek.com/api/create-chat-completion/) document no unrestricted-content switch. Thinking changes reasoning behavior, not content permissions. [Community reports](https://www.reddit.com/r/SillyTavernAI/comments/1wckhyg/deepseek_flash_41_isnt_censored/) include both successful replies and refusals, so they are not a guarantee of provider behavior. Prompt Mage does not rewrite refusals or retry them automatically.
 

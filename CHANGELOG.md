@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.1 — Direct descriptive language in Grimoire
+
+- Clarifies the default system prompt for non-graphic adult anatomy, clothing and visual composition, preserving selected appearance wording without unrequested sexual embellishment.
+- Upgrades the previous built-in system prompt automatically while retaining custom system prompts. Provider restrictions still apply; no filter bypass or refusal retries are added.
+
 ## 1.27.0 — Grimoire production briefs
 
 - Adds a production_brief connection and explicit Send brief → Foundry action. A queued compiler extracts the latest agreed direction into an immutable snapshot without adding a chat turn or rendering images.

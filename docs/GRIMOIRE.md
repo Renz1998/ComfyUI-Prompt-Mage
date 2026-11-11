@@ -1,5 +1,9 @@
 # Grimoire (Beta)
 
+**Direct descriptive language (1.27.1):** the built-in system prompt distinguishes non-graphic adult anatomy, clothing and figure studies from sexual actions. It requests literal appearance wording, without euphemisms or unrequested erotic embellishment. Earlier built-in prompts upgrade on the next turn; custom system prompts remain yours to edit under Instructions.
+
+DeepSeek Flash uses the official `deepseek-flash` API alias. The [official API parameters](https://api-docs.deepseek.com/api/create-chat-completion/) document no unrestricted-content switch. Thinking changes reasoning behavior, not content permissions. [Community reports](https://www.reddit.com/r/SillyTavernAI/comments/1wckhyg/deepseek_flash_41_isnt_censored/) include both successful replies and refusals, so they are not a guarantee of provider behavior. Prompt Mage does not rewrite refusals or retry them automatically.
+
 **1.18 redesign:** Grimoire handles conversation only. Explicitly apply a selected reply to Spell Scroll; normal image workflow runs read that separate snapshot. [Setup and migration](SPELL_SCROLL.md).
 
 **Interface (1.17):** Chat shows messenger-style bubbles and a fixed composer. **Instructions** holds System prompt, Task instructions and Pinned facts. **Settings → Assistant provider** selects Local Qwen, OpenAI or DeepSeek; selecting an API provider reveals its key input directly below. If a key is already saved, click Add / replace key. The compact header combines the chat picker, New chat and Settings; hover Settings to see the provider. Secondary tools are in More actions, and compacted memory is tucked into Conversation memory only when present. Native widget fields remain serialized for workflow compatibility but are hidden from the interface.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.27.3 — Reliable brief rule lists
+
+- Accepts plain text lists for production shared/review rules and preserves their order as newline-separated text. Keeps size/type validation and rejects nested structures.
+- Gives the brief compiler explicit field types and an example shape. Unsupported rule structures now produce a specific error; no extra API call, chat mutation or automatic retry is added.
+
 ## 1.27.2 — Neutral Grimoire defaults
 
 - Removes the overly broad descriptive-scope wording introduced in 1.27.1. Restores the general creative-assistant role with precise appearance wording and no unsolicited marketing advice.

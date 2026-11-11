@@ -23,6 +23,32 @@ class ProductionBriefTests(unittest.TestCase):
     def test_provider_keys_and_caps_cannot_be_injected(self):
         for key in ('assistant_backend','api_key','max_calls','max_renders','passing_score'):
             with self.assertRaises(ValueError):brief.validate({**self.draft,key:'bad'}, {})
+    def test_rule_lists_publish_as_text_in_one_call_without_mutating_chat(self):
+        self.draft.update(shared_rules=[' Same cloak. ','','Keep the village setting.'],review_rules=['Check pose.','Check cloak.'])
+        calls=[]
+        def generate(system,prompt):
+            calls.append(system)
+            return json.dumps(self.draft)
+        before=read_memory(memory_path(self.chapter))
+        value=brief.compile_brief(self.chapter,generate)
+        self.assertEqual(value['settings']['shared_rules'],'Same cloak.\nKeep the village setting.')
+        self.assertEqual(value['settings']['review_rules'],'Check pose.\nCheck cloak.')
+        self.assertEqual(len(calls),1)
+        self.assertIn('newline-separated strings',calls[0])
+        self.assertEqual(read_memory(memory_path(self.chapter)),before)
+        self.assertEqual(brief.latest(self.chapter)['id'],value['id'])
+    def test_optional_rules_and_invalid_structures_remain_bounded(self):
+        for value,expected in [(None,''),([],''),(['  '],''),(' Same cloak. ','Same cloak.')]:
+            self.assertEqual(brief.validate({**self.draft,'shared_rules':value},{})['shared_rules'],expected)
+        for field in ('shared_rules','review_rules'):
+            for value in ({'rule':'cloak'},[{'rule':'cloak'}],[True],['rule']*129,['x'*8001],['x'*4000,'y'*4000]):
+                with self.subTest(field=field,value_type=type(value).__name__):
+                    with self.assertRaisesRegex(ValueError,'production |Production '):
+                        brief.validate({**self.draft,field:value},{})
+        self.draft['shared_rules']={'unsupported':'rule'}
+        with self.assertRaisesRegex(ValueError,'must be text or a list'):
+            self.export()
+        self.assertIsNone(brief.latest(self.chapter))
     def test_stale_conversation_is_rejected_before_publication(self):
         def generate(*args):
             state=read_memory(memory_path(self.chapter));state['summary']='changed';save_memory(memory_path(self.chapter),state);return json.dumps(self.draft)
